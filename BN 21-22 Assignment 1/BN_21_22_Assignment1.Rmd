@@ -1,0 +1,66 @@
+---
+title: "BN 21-22 Assignment 1"
+author: "Niek Derksen"
+date: "9/29/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+# knitr::opts_chunk$set(echo = TRUE)
+```
+
+## **Libraries**
+
+### Course package
+
+```{r, echo=FALSE}
+install.packages(c("remotes","pROC","naivebayes","ranger"))
+remotes::install_github("jtextor/bayesianNetworks")
+library(bayesianNetworks)
+```
+
+### CRAN
+
+```{r, echo=FALSE}
+install.packages(c("funModeling","tidyverse","Hmisc", "bnlearn", "naivebayes", "dagitty", "dataPreparation", "lavaan", "summarytools"), dependencies = TRUE)
+library(funModeling) 
+library(tidyverse) 
+library(Hmisc)
+library(bnlearn)
+library(naivebayes)
+library(dagitty)
+library(dataPreparation)
+library(lavaan)
+library(summarytools)
+```
+
+## **Data-set**
+
+## Import
+
+I assume the "heart_failure_clinical_records_dataset.csv"-file from [this](https://www.kaggle.com/andrewmvd/heart-failure-clinical-data/download) Kaggle page is present in the current working directory.
+
+```{r, echo=TRUE}
+d1=read.table("./heart_failure_clinical_records_dataset.csv", sep=',', header=TRUE)
+```
+
+### Exploration
+
+```{r}
+print(freq(d1), method='render')
+```
+
+```{r, echo=TRUE}
+print(dfSummary(d1, plain.ascii  = FALSE,
+          style        = 'grid',
+          graph.magnif = 0.85,
+          varnumbers = FALSE,
+          valid.col    = FALSE,
+          tmp.img.dir  = "/Rtmp"), method='render')
+```
+
+```{r}
+plot_num(d1)
+```

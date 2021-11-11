@@ -36,7 +36,7 @@ library(lavaan)
 library(summarytools)
 ```
 
-## **Data-set**
+# **Data**
 
 ## Import
 
@@ -46,7 +46,7 @@ I assume the "heart_failure_clinical_records_dataset.csv"-file from [this](https
 d1=read.table("./heart_failure_clinical_records_dataset.csv", sep=',', header=TRUE)
 ```
 
-### Exploration
+## Exploration
 
 ```{r}
 print(freq(d1), method='render')
@@ -63,4 +63,137 @@ print(dfSummary(d1, plain.ascii  = FALSE,
 
 ```{r}
 plot_num(d1)
+```
+
+Good all data seems complete. Lets check data type:
+
+### Pre-processing
+
+```{r}
+describe(d1)
+```
+
+```{r}
+print(status(d1))
+```
+
+The following variables are actually binary while listed as numeric:
+
+-   anaemia
+
+-   diabetes
+
+-   high_blood_pressure
+
+-   sex
+
+-   smoking
+
+Transform numeric binary variables to logical:
+
+```{r}
+vars <-c("anaemia","diabetes","high_blood_pressure","sex","smoking")
+d1[,vars] <- sapply(d1[,vars], as.logical)
+describe(d1)
+```
+
+lets rename DEATH_EVENT to heart_failure.
+
+```{r}
+d1 <- rename(d1, heart_failure = DEATH_EVENT)
+```
+
+### Relationship check
+
+Create a simple linear model to check some relationships:
+
+```{r}
+lin_mdl <- lm(heart_failure ~ age + anaemia + creatinine_phosphokinase + diabetes + ejection_fraction + high_blood_pressure + platelets + serum_creatinine + serum_sodium + sex + smoking + time, data=data.frame(d1))
+coef(lin_mdl)
+summary(lin_mdl)
+```
+
+Not sure what to do with time here. Just took it along. The most significant effects are:
+
+-   age
+
+-   anaemia
+
+-    ejection_fraction
+
+-    serum_creatinine
+
+-    time
+
+Linear regression model is a bad fit -\> Multiple adjusted R-squared 0.3924.
+
+# Model Graph structures
+
+I've devised the following Occam's Razor model. V1.
+
+Defining the above model in dagitty syntax:
+
+```{r}
+g1 <- graphLayout(dagitty('dag {
+bb="0,0,1,1"
+age [pos="0.400,0.765"]
+anaemia [pos="0.626,0.325"]
+creatinine_phosphokinase [pos="0.643,0.593"]
+diabetes [pos="0.352,0.317"]
+ejection_fraction [pos="0.521,0.323"]
+heart_failure [pos="0.504,0.491"]
+high_blood_pressure [pos="0.526,0.198"]
+obesity [latent,pos="0.425,0.266"]
+platelets [pos="0.625,0.448"]
+serum_creatinine [pos="0.604,0.734"]
+serum_sodium [pos="0.363,0.557"]
+sex [pos="0.505,0.770"]
+smoking [pos="0.448,0.083"]
+time [pos="0.361,0.451"]
+age -> heart_failure
+anaemia -> platelets
+creatinine_phosphokinase -> heart_failure
+diabetes -> ejection_fraction
+diabetes -> obesity
+ejection_fraction -> heart_failure
+heart_failure -> serum_sodium
+heart_failure -> time
+high_blood_pressure -> ejection_fraction
+obesity -> ejection_fraction
+obesity -> high_blood_pressure
+platelets -> heart_failure
+serum_creatinine -> heart_failure
+sex -> heart_failure
+smoking -> high_blood_pressure
+smoking -> obesity
+}
+'
+))
+```
+
+```{r}
+plot(g1)
+```
+
+Anemia can cause lower level of blood platelets & obesity is an unobserved variable.
+
+# Testing Models
+
+First we perform a chi-square test to see if we missed edges.
+
+```{r}
+independency_test<-localTests(g1, d1, type="cis.chisq")
+print(independency_test)
+```
+
+Anaemia seems to require a direct connection to heart_failure.
+
+**Note:** there are tests with extremely high degrees of freedom, which makes them unreliable.
+
+Lets create a SEM model first:
+
+```{r}
+sem_model1 <- toString(g1,"lavaan")
+fit <- lavaan(sem_model1, data=d1)
+summary(fit, standardized=TRUE)
 ```

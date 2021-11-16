@@ -24,7 +24,7 @@ library(bayesianNetworks)
 ### CRAN
 
 ```{r, echo=FALSE}
-install.packages(c("funModeling","tidyverse","Hmisc", "bnlearn", "naivebayes", "dagitty", "dataPreparation", "lavaan", "summarytools"), dependencies = TRUE)
+install.packages(c("funModeling","tidyverse","Hmisc", "bnlearn", "naivebayes", "dagitty", "dataPreparation", "lavaan", "summarytools", "OneR"), dependencies = TRUE)
 library(funModeling) 
 library(tidyverse) 
 library(Hmisc)
@@ -34,6 +34,7 @@ library(dagitty)
 library(dataPreparation)
 library(lavaan)
 library(summarytools)
+library(OneR)
 ```
 
 # **Data**
@@ -52,7 +53,7 @@ d1=read.table("./heart_failure_clinical_records_dataset.csv", sep=',', header=TR
 print(freq(d1), method='render')
 ```
 
-```{r, echo=TRUE}
+```{r}
 print(dfSummary(d1, plain.ascii  = FALSE,
           style        = 'grid',
           graph.magnif = 0.85,
@@ -61,54 +62,182 @@ print(dfSummary(d1, plain.ascii  = FALSE,
           tmp.img.dir  = "/Rtmp"), method='render')
 ```
 
-```{r}
-plot_num(d1)
-```
-
 Good all data seems complete. Lets check data type:
-
-### Pre-processing
 
 ```{r}
 describe(d1)
 ```
+
+```{r}
+plot_num(d1)
+```
+
+### Pre-processing
+
+#### Renaming long variables
+
+```{r}
+d1 <- rename(d1, heart_failure = DEATH_EVENT)
+d1 <- rename(d1, cpk = creatinine_phosphokinase)
+d1 <- rename(d1, srm_creatinine = serum_creatinine)
+d1 <- rename(d1, srm_sodium = serum_sodium)
+```
+
+#### Factorizing continuous data
+
+We are gonna need to do some pre-processing in order for the SEM to fit, since our data-set is a combination of binary and continuous data. This means we will need polychoric correlation matrices (Pearson, 1900) to test whether the implied conditional independencies of the model hold in the data.
+
+We first have to bin the continuous variables:
+
+```{r}
+#create a copy of data_set for reference
+d1_proc = data.frame(d1)
+```
+
+##### Ordering Binary Variables
+
+```{r}
+d1_proc$anaemia <- as.numeric(ordered(d1$anaemia))
+d1_proc$sex <- as.numeric(ordered(d1$sex))
+d1_proc$high_blood_pressure <- as.numeric(ordered(d1$high_blood_pressure))
+d1_proc$diabetes <- as.numeric(ordered(d1$diabetes))
+d1_proc$smoking <- as.numeric(ordered(d1$smoking))
+d1_proc$heart_failure <- as.numeric(ordered(d1$heart_failure))
+```
+
+##### Age
+
+```{r}
+#create copy of dataset and label each row with a corresponding age bin
+temp_age <- rep("<97", nrow(d1_proc)) #96 is max age
+temp_age[d1_proc$age >=0 & d1_proc$age <50] <- "<50"
+temp_age[d1_proc$age >=50 & d1_proc$age <60] <- "50-60"
+temp_age[d1_proc$age >=60 & d1_proc$age <70] <- "60-70"
+temp_age[d1_proc$age >=70 & d1_proc$age <80] <- "70-80"
+temp_age[d1_proc$age >=80 & d1_proc$age<90] <- "80-90"
+temp_age[d1_proc$age >=90] <- "90>"
+#turn binned data into factor:
+d1_proc$age <- factor(temp_age, ordered=TRUE, levels=c("<50","50-60","60-70","70-80","80-90","90>"))
+```
+
+##### CPK
+
+```{r}
+#create copy of dataset and label each row with a corresponding age bin
+temp_cpk <- rep("<7862", nrow(d1_proc)) #96 is max cpk
+temp_cpk[d1_proc$cpk >=0 & d1_proc$cpk <200] <- "0-200"
+temp_cpk[d1_proc$cpk >=200 & d1_proc$cpk <400] <- "200-400"
+temp_cpk[d1_proc$cpk >=400 & d1_proc$cpk <600] <- "400-600"
+temp_cpk[d1_proc$cpk >=600 & d1_proc$cpk <800] <- "600-800"
+temp_cpk[d1_proc$cpk >=800 & d1_proc$cpk <1000] <- "800-1000"
+temp_cpk[d1_proc$cpk >=1000 & d1_proc$cpk <1200] <- "1000-1200"
+temp_cpk[d1_proc$cpk >=1200 & d1_proc$cpk <1400] <- "1200-1400"
+temp_cpk[d1_proc$cpk >=1400 & d1_proc$cpk <1600] <- "1400-1600"
+temp_cpk[d1_proc$cpk >=1600 & d1_proc$cpk <1800] <- "1600-1800"
+temp_cpk[d1_proc$cpk >=1800 & d1_proc$cpk <2000] <- "1800-2000"
+temp_cpk[d1_proc$cpk >=2000] <- "2000>"
+#turn binned data into factor:
+d1_proc$cpk <- factor(temp_cpk, ordered=TRUE, levels=c("0-200", "200-400", "400-600", "600-800","800-1000","1000-1200","1200-1400","1400-1600","1600-1800","1800-2000","2000>"))
+```
+
+##### Ejection Fraction
+
+```{r}
+#create copy of dataset and label each row with a corresponding ef bin
+temp_ef <- rep("<81", nrow(d1_proc)) #80 is max ef
+temp_ef[d1_proc$ejection_fraction >=0  & d1_proc$ejection_fraction <20] <- "<20"
+temp_ef[d1_proc$ejection_fraction >=20 & d1_proc$ejection_fraction <30] <- "20-30"
+temp_ef[d1_proc$ejection_fraction >=30 & d1_proc$ejection_fraction <40] <- "30-40"
+temp_ef[d1_proc$ejection_fraction >=40 & d1_proc$ejection_fraction <50] <- "40-50"
+temp_ef[d1_proc$ejection_fraction >=50 & d1_proc$ejection_fraction <60] <- "50-60"
+temp_ef[d1_proc$ejection_fraction >=60] <- "60>"
+#turn binned data into factor:
+d1_proc$ejection_fraction <- factor(temp_ef, ordered=TRUE, levels=c("<20","20-30","30-40","40-50","50-60","60>"))
+```
+
+##### Platelets
+
+```{r}
+#create copy of dataset and label each row with a corresponding platelets bin
+temp_plt <- rep("<850k", nrow(d1_proc)) #850k is max platelets
+temp_plt[d1_proc$platelets >=0  & d1_proc$platelets <50000] <- "<50k"
+temp_plt[d1_proc$platelets >=50000  & d1_proc$platelets <100000] <- "50k-100k"
+temp_plt[d1_proc$platelets >=100000  & d1_proc$platelets <150000] <- "100k-150k"
+temp_plt[d1_proc$platelets >=150000  & d1_proc$platelets <200000] <- "150k-200k"
+temp_plt[d1_proc$platelets >=200000  & d1_proc$platelets <250000] <- "200k-250k"
+temp_plt[d1_proc$platelets >=250000  & d1_proc$platelets <300000] <- "250k-300k"
+temp_plt[d1_proc$platelets >=300000  & d1_proc$platelets <350000] <- "300k-350k"
+temp_plt[d1_proc$platelets >=350000  & d1_proc$platelets <400000] <- "350k-400k"
+temp_plt[d1_proc$platelets >=400000  & d1_proc$platelets <450000] <- "400k-450k"
+temp_plt[d1_proc$platelets >=450000  & d1_proc$platelets <500000] <- "450k-500k"
+temp_plt[d1_proc$platelets >=500000] <- "500k>"
+#turn binned data into factor:
+d1_proc$ejection_fraction <- factor(temp_plt, ordered=TRUE, levels=c("<50k","50k-100k","100k-150k","150k-200k","200k-250k","250k-300k","300k-350k","350k-400k","400k-450k","450k-500k","500k>"))
+```
+
+##### Serum-Creatinine
+
+```{r}
+#create copy of dataset and label each row with a corresponding sc bin
+temp_sc <- rep("<9.5", nrow(d1_proc)) #850k is max platelets
+temp_sc[d1_proc$srm_creatinine >=0  & d1_proc$srm_creatinine <1.0] <- "<1.0"
+temp_sc[d1_proc$srm_creatinine >=1.0  & d1_proc$srm_creatinine <1.5] <- "1.0-1.5"
+temp_sc[d1_proc$srm_creatinine >=1.5  & d1_proc$srm_creatinine <2.0] <- "1.5-2.0"
+temp_sc[d1_proc$srm_creatinine >=2.0  & d1_proc$srm_creatinine <2.5] <- "2.0-2.5"
+temp_sc[d1_proc$srm_creatinine >=2.5  & d1_proc$srm_creatinine <3.0] <- "2.5-3.0"
+temp_sc[d1_proc$srm_creatinine >=3.0  & d1_proc$srm_creatinine <3.5] <- "3.0-3.5"
+temp_sc[d1_proc$srm_creatinine >=3.5  & d1_proc$srm_creatinine <4.0] <- "3.5-4.0"
+temp_sc[d1_proc$srm_creatinine >=4.0] <- "4.0>"
+d1_proc$serum_creatinine <- factor(temp_sc, ordered=TRUE, levels=c("<1.0","1.0-1.5","1.5-2.0","2.0-2.5","2.5-3.0","3.0-3.5","3.5-4.0","4.0>"))
+```
+
+##### Serum-sodium
+
+```{r}
+#create copy of dataset and label each row with a corresponding ss bin
+temp_ss <- rep("<149", nrow(d1_proc)) #148 is max serum_sodium
+temp_ss[d1_proc$srm_sodium >=0  & d1_proc$srm_sodium <125] <- "<125"
+temp_ss[d1_proc$srm_sodium >=125  & d1_proc$srm_sodium <130] <- "125-130"
+temp_ss[d1_proc$srm_sodium >=130  & d1_proc$srm_sodium <135] <- "130-135"
+temp_ss[d1_proc$srm_sodium >=135  & d1_proc$srm_sodium <140] <- "135-140"
+temp_ss[d1_proc$srm_sodium >=140  & d1_proc$srm_sodium <145] <- "140-145"
+temp_ss[d1_proc$srm_sodium >=145] <- "145>"
+d1_proc$srm_sodium <- factor(temp_ss, ordered=TRUE, levels=c("<125","125-130", "130-135", "135-140","140-145","145>"))
+```
+
+##### Time
+
+```{r}
+#create copy of dataset and label each row with a corresponding time bin
+temp_time <- rep("<286", nrow(d1_proc)) #285 is max time
+temp_time[d1_proc$time >=0  & d1_proc$time <30] <- "<30"
+temp_time[d1_proc$time >=30  & d1_proc$time <60] <- "30-60"
+temp_time[d1_proc$time >=60  & d1_proc$time <90] <- "60-90"
+temp_time[d1_proc$time >=90  & d1_proc$time <120] <- "90-120"
+temp_time[d1_proc$time >=120  & d1_proc$time <150] <- "120-150"
+temp_time[d1_proc$time >=150  & d1_proc$time <180] <- "150-180"
+temp_time[d1_proc$time >=180  & d1_proc$time <210] <- "180-210"
+temp_time[d1_proc$time >=210  & d1_proc$time <240] <- "210-240"
+temp_time[d1_proc$time >=240  & d1_proc$time <270] <- "240-270"
+temp_time[d1_proc$time >=270] <- "270>"
+
+d1_proc$time <- factor(temp_time, ordered=TRUE, levels=c("<30","30-60","60-90","90-120","120-150","150-180","180-210","210-240","240-270","270>"))
+```
+
+lets check the data types again:
 
 ```{r}
 print(status(d1))
 ```
 
-The following variables are actually binary while listed as numeric:
-
--   anaemia
-
--   diabetes
-
--   high_blood_pressure
-
--   sex
-
--   smoking
-
-Transform numeric binary variables to logical:
-
-```{r}
-vars <-c("anaemia","diabetes","high_blood_pressure","sex","smoking")
-d1[,vars] <- sapply(d1[,vars], as.logical)
-describe(d1)
-```
-
-lets rename DEATH_EVENT to heart_failure.
-
-```{r}
-d1 <- rename(d1, heart_failure = DEATH_EVENT)
-```
+There seem to be no N/A's or transformation issues. Data pre-processing complete!
 
 ### Relationship check
 
 Create a simple linear model to check some relationships:
 
 ```{r}
-lin_mdl <- lm(heart_failure ~ age + anaemia + creatinine_phosphokinase + diabetes + ejection_fraction + high_blood_pressure + platelets + serum_creatinine + serum_sodium + sex + smoking + time, data=data.frame(d1))
+lin_mdl <- lm(heart_failure ~ age + anaemia + cpk + diabetes + ejection_fraction + high_blood_pressure + platelets + srm_creatinine + srm_sodium + sex + smoking + time, data=data.frame(d1_proc))
 coef(lin_mdl)
 summary(lin_mdl)
 ```
@@ -119,11 +248,11 @@ Not sure what to do with time here. Just took it along. The most significant eff
 
 -   anaemia
 
--    ejection_fraction
+-   ejection_fraction
 
--    serum_creatinine
+-   serum_creatinine
 
--    time
+-   time
 
 Linear regression model is a bad fit -\> Multiple adjusted R-squared 0.3924.
 
@@ -138,34 +267,29 @@ g1 <- graphLayout(dagitty('dag {
 bb="0,0,1,1"
 age [pos="0.400,0.765"]
 anaemia [pos="0.626,0.325"]
-creatinine_phosphokinase [pos="0.643,0.593"]
-diabetes [pos="0.352,0.317"]
+cpk [pos="0.643,0.593"]
+diabetes [pos="0.381,0.311"]
 ejection_fraction [pos="0.521,0.323"]
 heart_failure [pos="0.504,0.491"]
 high_blood_pressure [pos="0.526,0.198"]
-obesity [latent,pos="0.425,0.266"]
 platelets [pos="0.625,0.448"]
-serum_creatinine [pos="0.604,0.734"]
-serum_sodium [pos="0.363,0.557"]
+srm_creatinine [pos="0.604,0.734"]
+srm_sodium [pos="0.363,0.557"]
 sex [pos="0.505,0.770"]
-smoking [pos="0.448,0.083"]
+smoking [pos="0.526,0.082"]
 time [pos="0.361,0.451"]
 age -> heart_failure
 anaemia -> platelets
-creatinine_phosphokinase -> heart_failure
+cpk -> heart_failure
 diabetes -> ejection_fraction
-diabetes -> obesity
 ejection_fraction -> heart_failure
-heart_failure -> serum_sodium
+heart_failure -> srm_sodium
 heart_failure -> time
 high_blood_pressure -> ejection_fraction
-obesity -> ejection_fraction
-obesity -> high_blood_pressure
 platelets -> heart_failure
-serum_creatinine -> heart_failure
+srm_creatinine -> heart_failure
 sex -> heart_failure
 smoking -> high_blood_pressure
-smoking -> obesity
 }
 '
 ))
@@ -179,21 +303,44 @@ Anemia can cause lower level of blood platelets & obesity is an unobserved varia
 
 # Testing Models
 
-First we perform a chi-square test to see if we missed edges.
+## Chi-square
+
+First we perform local tests using d-separation statements to test the model.
 
 ```{r}
-independency_test<-localTests(g1, d1, type="cis.chisq")
+corr <- lavCor(d1_proc)
+varTable(d1_proc)
+independency_test<-localTests(g1, sample.cov=corr, sample.nobs=nrow(d1_proc))
 print(independency_test)
+
+plotLocalTestResults(independency_test)
 ```
 
-Anaemia seems to require a direct connection to heart_failure.
+```{r}
+independency_test2<-localTests(g1, sample.cov=corr, sample.nobs=nrow(d1_proc), max.conditioning.variables = 2)
+print(independency_test2)
 
-**Note:** there are tests with extremely high degrees of freedom, which makes them unreliable.
+plotLocalTestResults(independency_test2)
+```
 
-Lets create a SEM model first:
+## SEM
 
 ```{r}
-sem_model1 <- toString(g1,"lavaan")
-fit <- lavaan(sem_model1, data=d1)
+polychoric <- lavCor(d1_proc)
+localTests(g1, sample.cov=polychoric, sample.nobs=nrow(d1_proc))
+
+sem_model1 <- toString(g1, "lavaan")
+fit <- lavaan(sem_model1, sample.cov=polychoric, sample.nobs=nrow(d1_proc), auto.var=TRUE, data=d1_proc)
 summary(fit, standardized=TRUE)
+```
+
+Lets plot the SEM model:
+
+```{r}
+x <- lavaan::parTable(sem_model1)
+x <- x[c(1:12),]}
+cg <- coordinates(g)
+fg <- lavaanToGraph(x, digits = 2)
+coordinates(fg) <- cg
+plot(fg, show.coefficients = TRUE)
 ```

@@ -295,13 +295,24 @@ d2_proc_corr = lavCor(d2_proc)
 
 ```{r }
 corrtest <- localTests(g1, sample.cov = d2_proc_corr, sample.nobs=nrow(d2_proc))
+plotLocalTestResults(corrtest)
 top_corr <- corrtest[order(corrtest$estimate,decreasing = TRUE),]
 print(top_corr)
+down_corr <- corrtest[order(corrtest$estimate,decreasing = FALSE),]
+print(down_corr)
 ```
+Positive correlations
+- Similar to the chi-squared test, sex and smoking are strongly correlated.
+- Creatine phosphokinase shows correlation with time and death_event.
+- Age and serum creatine also show significant correlations.
 
-Similar to the chi-squared test, sex and smoking are strongly correlated.
-Creatine phosphokinase also shows correlation with time and death_event.
-Age and serum creatine also show significant correlations.
+Negative correlations
+- Many given time, are negatively correlated 
+- Anaemia and creatine-pk show negative correlation
+- Age and creatine-cpk
+- diabetes and sex
+
+
 
 
 

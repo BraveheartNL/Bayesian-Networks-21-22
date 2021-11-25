@@ -16,15 +16,15 @@ output:
 ### Course package
 
 ```{r, echo=FALSE}
-install.packages(c("remotes","pROC","naivebayes","ranger"))
-remotes::install_github("jtextor/bayesianNetworks")
+#install.packages(c("remotes","pROC","naivebayes","ranger"))
+#remotes::install_github("jtextor/bayesianNetworks")
 library(bayesianNetworks)
 ```
 
 ### CRAN
 
 ```{r, echo=FALSE}
-install.packages(c("funModeling","tidyverse","Hmisc", "bnlearn", "naivebayes", "dagitty", "dataPreparation", "lavaan", "summarytools", "OneR"), dependencies = TRUE)
+#install.packages(c("funModeling","tidyverse","Hmisc", "bnlearn", "naivebayes", "dagitty", "dataPreparation", "lavaan", "summarytools", "OneR"), dependencies = TRUE)
 library(funModeling) 
 library(tidyverse) 
 library(Hmisc)
@@ -110,14 +110,16 @@ d1_proc$heart_failure <- as.numeric(ordered(d1$heart_failure))
 ```{r}
 #create copy of dataset and label each row with a corresponding age bin
 temp_age <- rep("<97", nrow(d1_proc)) #96 is max age
-temp_age[d1_proc$age >=0 & d1_proc$age <50] <- "<50"
-temp_age[d1_proc$age >=50 & d1_proc$age <60] <- "50-60"
-temp_age[d1_proc$age >=60 & d1_proc$age <70] <- "60-70"
-temp_age[d1_proc$age >=70 & d1_proc$age <80] <- "70-80"
-temp_age[d1_proc$age >=80 & d1_proc$age<90] <- "80-90"
-temp_age[d1_proc$age >=90] <- "90>"
+temp_age[d1$age >=0 & d1$age <50] <- "<50"
+temp_age[d1$age >=50 & d1$age <60] <- "50-60"
+temp_age[d1$age >=60 & d1$age <70] <- "60-70"
+temp_age[d1$age >=70 & d1$age <80] <- "70-80"
+temp_age[d1$age >=80 & d1$age<90] <- "80-90"
+temp_age[d1$age >=90] <- "90>"
 #turn binned data into factor:
-d1_proc$age <- factor(temp_age, ordered=TRUE, levels=c("<50","50-60","60-70","70-80","80-90","90>"))
+d1_proc$age <- as.numeric(factor(temp_age, ordered=TRUE, levels=c("<50","50-60","60-70","70-80","80-90","90>")))
+summary(d1_proc$age)
+
 ```
 
 ##### CPK
@@ -125,17 +127,17 @@ d1_proc$age <- factor(temp_age, ordered=TRUE, levels=c("<50","50-60","60-70","70
 ```{r}
 #create copy of dataset and label each row with a corresponding age bin
 temp_cpk <- rep("<7862", nrow(d1_proc)) #96 is max cpk
-temp_cpk[d1_proc$cpk >=0 & d1_proc$cpk <200] <- "0-200"
-temp_cpk[d1_proc$cpk >=200 & d1_proc$cpk <400] <- "200-400"
-temp_cpk[d1_proc$cpk >=400 & d1_proc$cpk <600] <- "400-600"
-temp_cpk[d1_proc$cpk >=600 & d1_proc$cpk <800] <- "600-800"
-temp_cpk[d1_proc$cpk >=800 & d1_proc$cpk <1000] <- "800-1000"
-temp_cpk[d1_proc$cpk >=1000 & d1_proc$cpk <1200] <- "1000-1200"
-temp_cpk[d1_proc$cpk >=1200 & d1_proc$cpk <1400] <- "1200-1400"
-temp_cpk[d1_proc$cpk >=1400 & d1_proc$cpk <1600] <- "1400-1600"
-temp_cpk[d1_proc$cpk >=1600 & d1_proc$cpk <1800] <- "1600-1800"
-temp_cpk[d1_proc$cpk >=1800 & d1_proc$cpk <2000] <- "1800-2000"
-temp_cpk[d1_proc$cpk >=2000] <- "2000>"
+temp_cpk[d1$cpk >=0 & d1$cpk <200] <- "0-200"
+temp_cpk[d1$cpk >=200 & d1$cpk <400] <- "200-400"
+temp_cpk[d1$cpk >=400 & d1$cpk <600] <- "400-600"
+temp_cpk[d1$cpk >=600 & d1$cpk <800] <- "600-800"
+temp_cpk[d1$cpk >=800 & d1$cpk <1000] <- "800-1000"
+temp_cpk[d1$cpk >=1000 & d1$cpk <1200] <- "1000-1200"
+temp_cpk[d1$cpk >=1200 & d1$cpk <1400] <- "1200-1400"
+temp_cpk[d1$cpk >=1400 & d1$cpk <1600] <- "1400-1600"
+temp_cpk[d1$cpk >=1600 & d1$cpk <1800] <- "1600-1800"
+temp_cpk[d1$cpk >=1800 & d1$cpk <2000] <- "1800-2000"
+temp_cpk[d1$cpk >=2000] <- "2000>"
 #turn binned data into factor:
 d1_proc$cpk <- factor(temp_cpk, ordered=TRUE, levels=c("0-200", "200-400", "400-600", "600-800","800-1000","1000-1200","1200-1400","1400-1600","1600-1800","1800-2000","2000>"))
 ```
@@ -145,12 +147,12 @@ d1_proc$cpk <- factor(temp_cpk, ordered=TRUE, levels=c("0-200", "200-400", "400-
 ```{r}
 #create copy of dataset and label each row with a corresponding ef bin
 temp_ef <- rep("<81", nrow(d1_proc)) #80 is max ef
-temp_ef[d1_proc$ejection_fraction >=0  & d1_proc$ejection_fraction <20] <- "<20"
-temp_ef[d1_proc$ejection_fraction >=20 & d1_proc$ejection_fraction <30] <- "20-30"
-temp_ef[d1_proc$ejection_fraction >=30 & d1_proc$ejection_fraction <40] <- "30-40"
-temp_ef[d1_proc$ejection_fraction >=40 & d1_proc$ejection_fraction <50] <- "40-50"
-temp_ef[d1_proc$ejection_fraction >=50 & d1_proc$ejection_fraction <60] <- "50-60"
-temp_ef[d1_proc$ejection_fraction >=60] <- "60>"
+temp_ef[d1$ejection_fraction >=0  & d1$ejection_fraction <20] <- "<20"
+temp_ef[d1$ejection_fraction >=20 & d1$ejection_fraction <30] <- "20-30"
+temp_ef[d1$ejection_fraction >=30 & d1$ejection_fraction <40] <- "30-40"
+temp_ef[d1$ejection_fraction >=40 & d1$ejection_fraction <50] <- "40-50"
+temp_ef[d1$ejection_fraction >=50 & d1$ejection_fraction <60] <- "50-60"
+temp_ef[d1$ejection_fraction >=60] <- "60>"
 #turn binned data into factor:
 d1_proc$ejection_fraction <- factor(temp_ef, ordered=TRUE, levels=c("<20","20-30","30-40","40-50","50-60","60>"))
 ```
@@ -160,19 +162,19 @@ d1_proc$ejection_fraction <- factor(temp_ef, ordered=TRUE, levels=c("<20","20-30
 ```{r}
 #create copy of dataset and label each row with a corresponding platelets bin
 temp_plt <- rep("<850k", nrow(d1_proc)) #850k is max platelets
-temp_plt[d1_proc$platelets >=0  & d1_proc$platelets <50000] <- "<50k"
-temp_plt[d1_proc$platelets >=50000  & d1_proc$platelets <100000] <- "50k-100k"
-temp_plt[d1_proc$platelets >=100000  & d1_proc$platelets <150000] <- "100k-150k"
-temp_plt[d1_proc$platelets >=150000  & d1_proc$platelets <200000] <- "150k-200k"
-temp_plt[d1_proc$platelets >=200000  & d1_proc$platelets <250000] <- "200k-250k"
-temp_plt[d1_proc$platelets >=250000  & d1_proc$platelets <300000] <- "250k-300k"
-temp_plt[d1_proc$platelets >=300000  & d1_proc$platelets <350000] <- "300k-350k"
-temp_plt[d1_proc$platelets >=350000  & d1_proc$platelets <400000] <- "350k-400k"
-temp_plt[d1_proc$platelets >=400000  & d1_proc$platelets <450000] <- "400k-450k"
-temp_plt[d1_proc$platelets >=450000  & d1_proc$platelets <500000] <- "450k-500k"
-temp_plt[d1_proc$platelets >=500000] <- "500k>"
+temp_plt[d1$platelets >=0  & d1$platelets <50000] <- "<50k"
+temp_plt[d1$platelets >=50000  & d1$platelets <100000] <- "50k-100k"
+temp_plt[d1$platelets >=100000  & d1$platelets <150000] <- "100k-150k"
+temp_plt[d1$platelets >=150000  & d1$platelets <200000] <- "150k-200k"
+temp_plt[d1$platelets >=200000  & d1$platelets <250000] <- "200k-250k"
+temp_plt[d1$platelets >=250000  & d1$platelets <300000] <- "250k-300k"
+temp_plt[d1$platelets >=300000  & d1$platelets <350000] <- "300k-350k"
+temp_plt[d1$platelets >=350000  & d1$platelets <400000] <- "350k-400k"
+temp_plt[d1$platelets >=400000  & d1$platelets <450000] <- "400k-450k"
+temp_plt[d1$platelets >=450000  & d1$platelets <500000] <- "450k-500k"
+temp_plt[d1$platelets >=500000] <- "500k>"
 #turn binned data into factor:
-d1_proc$ejection_fraction <- factor(temp_plt, ordered=TRUE, levels=c("<50k","50k-100k","100k-150k","150k-200k","200k-250k","250k-300k","300k-350k","350k-400k","400k-450k","450k-500k","500k>"))
+d1_proc$platelets <- factor(temp_plt, ordered=TRUE, levels=c("<50k","50k-100k","100k-150k","150k-200k","200k-250k","250k-300k","300k-350k","350k-400k","400k-450k","450k-500k","500k>"))
 ```
 
 ##### Serum-Creatinine
@@ -180,15 +182,15 @@ d1_proc$ejection_fraction <- factor(temp_plt, ordered=TRUE, levels=c("<50k","50k
 ```{r}
 #create copy of dataset and label each row with a corresponding sc bin
 temp_sc <- rep("<9.5", nrow(d1_proc)) #850k is max platelets
-temp_sc[d1_proc$srm_creatinine >=0  & d1_proc$srm_creatinine <1.0] <- "<1.0"
-temp_sc[d1_proc$srm_creatinine >=1.0  & d1_proc$srm_creatinine <1.5] <- "1.0-1.5"
-temp_sc[d1_proc$srm_creatinine >=1.5  & d1_proc$srm_creatinine <2.0] <- "1.5-2.0"
-temp_sc[d1_proc$srm_creatinine >=2.0  & d1_proc$srm_creatinine <2.5] <- "2.0-2.5"
-temp_sc[d1_proc$srm_creatinine >=2.5  & d1_proc$srm_creatinine <3.0] <- "2.5-3.0"
-temp_sc[d1_proc$srm_creatinine >=3.0  & d1_proc$srm_creatinine <3.5] <- "3.0-3.5"
-temp_sc[d1_proc$srm_creatinine >=3.5  & d1_proc$srm_creatinine <4.0] <- "3.5-4.0"
-temp_sc[d1_proc$srm_creatinine >=4.0] <- "4.0>"
-d1_proc$serum_creatinine <- factor(temp_sc, ordered=TRUE, levels=c("<1.0","1.0-1.5","1.5-2.0","2.0-2.5","2.5-3.0","3.0-3.5","3.5-4.0","4.0>"))
+temp_sc[d1$srm_creatinine >=0  & d1$srm_creatinine <1.0] <- "<1.0"
+temp_sc[d1$srm_creatinine >=1.0  & d1$srm_creatinine <1.5] <- "1.0-1.5"
+temp_sc[d1$srm_creatinine >=1.5  & d1$srm_creatinine <2.0] <- "1.5-2.0"
+temp_sc[d1$srm_creatinine >=2.0  & d1$srm_creatinine <2.5] <- "2.0-2.5"
+temp_sc[d1$srm_creatinine >=2.5  & d1$srm_creatinine <3.0] <- "2.5-3.0"
+temp_sc[d1$srm_creatinine >=3.0  & d1$srm_creatinine <3.5] <- "3.0-3.5"
+temp_sc[d1$srm_creatinine >=3.5  & d1$srm_creatinine <4.0] <- "3.5-4.0"
+temp_sc[d1$srm_creatinine >=4.0] <- "4.0>"
+d1_proc$srm_creatinine <- factor(temp_sc, ordered=TRUE, levels=c("<1.0","1.0-1.5","1.5-2.0","2.0-2.5","2.5-3.0","3.0-3.5","3.5-4.0","4.0>"))
 ```
 
 ##### Serum-sodium
@@ -196,12 +198,12 @@ d1_proc$serum_creatinine <- factor(temp_sc, ordered=TRUE, levels=c("<1.0","1.0-1
 ```{r}
 #create copy of dataset and label each row with a corresponding ss bin
 temp_ss <- rep("<149", nrow(d1_proc)) #148 is max serum_sodium
-temp_ss[d1_proc$srm_sodium >=0  & d1_proc$srm_sodium <125] <- "<125"
-temp_ss[d1_proc$srm_sodium >=125  & d1_proc$srm_sodium <130] <- "125-130"
-temp_ss[d1_proc$srm_sodium >=130  & d1_proc$srm_sodium <135] <- "130-135"
-temp_ss[d1_proc$srm_sodium >=135  & d1_proc$srm_sodium <140] <- "135-140"
-temp_ss[d1_proc$srm_sodium >=140  & d1_proc$srm_sodium <145] <- "140-145"
-temp_ss[d1_proc$srm_sodium >=145] <- "145>"
+temp_ss[d1$srm_sodium >=0  & d1$srm_sodium <125] <- "<125"
+temp_ss[d1$srm_sodium >=125  & d1$srm_sodium <130] <- "125-130"
+temp_ss[d1$srm_sodium >=130  & d1$srm_sodium <135] <- "130-135"
+temp_ss[d1$srm_sodium >=135  & d1$srm_sodium <140] <- "135-140"
+temp_ss[d1$srm_sodium >=140  & d1$srm_sodium <145] <- "140-145"
+temp_ss[d1$srm_sodium >=145] <- "145>"
 d1_proc$srm_sodium <- factor(temp_ss, ordered=TRUE, levels=c("<125","125-130", "130-135", "135-140","140-145","145>"))
 ```
 
@@ -210,24 +212,26 @@ d1_proc$srm_sodium <- factor(temp_ss, ordered=TRUE, levels=c("<125","125-130", "
 ```{r}
 #create copy of dataset and label each row with a corresponding time bin
 temp_time <- rep("<286", nrow(d1_proc)) #285 is max time
-temp_time[d1_proc$time >=0  & d1_proc$time <30] <- "<30"
-temp_time[d1_proc$time >=30  & d1_proc$time <60] <- "30-60"
-temp_time[d1_proc$time >=60  & d1_proc$time <90] <- "60-90"
-temp_time[d1_proc$time >=90  & d1_proc$time <120] <- "90-120"
-temp_time[d1_proc$time >=120  & d1_proc$time <150] <- "120-150"
-temp_time[d1_proc$time >=150  & d1_proc$time <180] <- "150-180"
-temp_time[d1_proc$time >=180  & d1_proc$time <210] <- "180-210"
-temp_time[d1_proc$time >=210  & d1_proc$time <240] <- "210-240"
-temp_time[d1_proc$time >=240  & d1_proc$time <270] <- "240-270"
-temp_time[d1_proc$time >=270] <- "270>"
+temp_time[d1$time >=0  & d1$time <30] <- "<30"
+temp_time[d1$time >=30  & d1$time <60] <- "30-60"
+temp_time[d1$time >=60  & d1$time <90] <- "60-90"
+temp_time[d1$time >=90  & d1$time <120] <- "90-120"
+temp_time[d1$time >=120  & d1$time <150] <- "120-150"
+temp_time[d1$time >=150  & d1$time <180] <- "150-180"
+temp_time[d1$time >=180  & d1$time <210] <- "180-210"
+temp_time[d1$time >=210  & d1$time <240] <- "210-240"
+temp_time[d1$time >=240  & d1$time <270] <- "240-270"
+temp_time[d1$time >=270] <- "270>"
+print(temp_time)
 
 d1_proc$time <- factor(temp_time, ordered=TRUE, levels=c("<30","30-60","60-90","90-120","120-150","150-180","180-210","210-240","240-270","270>"))
+summary(d1_proc$time)
 ```
 
 lets check the data types again:
 
 ```{r}
-print(status(d1))
+summary(d1_proc)
 ```
 
 There seem to be no N/A's or transformation issues. Data pre-processing complete!
@@ -263,7 +267,7 @@ I've devised the following Occam's Razor model. V1.
 Defining the above model in dagitty syntax:
 
 ```{r}
-g1 <- graphLayout(dagitty('dag {
+g1 <- graphLayout(dagitty('dag{
 bb="0,0,1,1"
 age [pos="0.400,0.765"]
 anaemia [pos="0.626,0.325"]
@@ -279,7 +283,9 @@ sex [pos="0.505,0.770"]
 smoking [pos="0.526,0.082"]
 time [pos="0.361,0.451"]
 age -> heart_failure
+age -> diabetes
 anaemia -> platelets
+anaemia -> cpk
 cpk -> heart_failure
 diabetes -> ejection_fraction
 ejection_fraction -> heart_failure
@@ -287,8 +293,10 @@ heart_failure -> srm_sodium
 heart_failure -> time
 high_blood_pressure -> ejection_fraction
 platelets -> heart_failure
-srm_creatinine -> heart_failure
+heart_failure -> srm_creatinine
+srm_creatinine -> srm_sodium
 sex -> heart_failure
+sex -> smoking
 smoking -> high_blood_pressure
 }
 '
@@ -308,16 +316,15 @@ Anemia can cause lower level of blood platelets & obesity is an unobserved varia
 First we perform local tests using d-separation statements to test the model.
 
 ```{r}
-corr <- lavCor(d1_proc)
-varTable(d1_proc)
-independency_test<-localTests(g1, sample.cov=corr, sample.nobs=nrow(d1_proc))
+m <- lavCor(d1_proc)
+independency_test<-localTests(g1, sample.cov=m, sample.nobs=nrow(d1_proc))
 print(independency_test)
 
 plotLocalTestResults(independency_test)
 ```
 
 ```{r}
-independency_test2<-localTests(g1, sample.cov=corr, sample.nobs=nrow(d1_proc), max.conditioning.variables = 2)
+independency_test2<-localTests(g1, sample.cov=m, sample.nobs=nrow(d1_proc), max.conditioning.variables = 2)
 print(independency_test2)
 
 plotLocalTestResults(independency_test2)
@@ -326,21 +333,35 @@ plotLocalTestResults(independency_test2)
 ## SEM
 
 ```{r}
-polychoric <- lavCor(d1_proc)
-localTests(g1, sample.cov=polychoric, sample.nobs=nrow(d1_proc))
 
+head(d1_proc)
+polychoric <- lavCor(d1_proc)
+
+
+localTests(g1, sample.cov=polychoric, sample.nobs=nrow(d1_proc))
+status(d1_proc)
 sem_model1 <- toString(g1, "lavaan")
-fit <- lavaan(sem_model1, sample.cov=polychoric, sample.nobs=nrow(d1_proc), auto.var=TRUE, data=d1_proc)
-summary(fit, standardized=TRUE)
+fit <- lavaan(sem_model1, sample.cov=polychoric, sample.nobs=nrow(d1_proc), auto.var=TRUE, data=d1_proc, ordered=c( "cpk", "ejection_fraction","platelets" ,"srm_creatinine", "srm_sodium", "time"))
+
+lapply(lavNames(fit), function(x) class(d1_proc[,x]))
+varTable(fit)
+#summary(fit, standardized=TRUE)
 ```
 
 Lets plot the SEM model:
 
 ```{r}
-x <- lavaan::parTable(sem_model1)
-x <- x[c(1:12),]}
-cg <- coordinates(g)
-fg <- lavaanToGraph(x, digits = 2)
+cg <- coordinates(g1)
+fg <- lavaanToGraph(fit, digits = 2)
 coordinates(fg) <- cg
+```
+
+
+```{r}
 plot(fg, show.coefficients = TRUE)
+```
+
+
+```{r}
+fit
 ```

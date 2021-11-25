@@ -54,12 +54,7 @@ print(freq(d1), method='render')
 ```
 
 ```{r}
-print(dfSummary(d1, plain.ascii  = FALSE,
-          style        = 'grid',
-          graph.magnif = 0.85,
-          varnumbers = FALSE,
-          valid.col    = FALSE,
-          tmp.img.dir  = "/Rtmp"), method='render')
+
 ```
 
 Good all data seems complete. Lets check data type:
@@ -330,7 +325,7 @@ print(independency_test2)
 plotLocalTestResults(independency_test2)
 ```
 
-## SEM
+## SEM (this generates the log(pi.i) error)
 
 ```{r}
 

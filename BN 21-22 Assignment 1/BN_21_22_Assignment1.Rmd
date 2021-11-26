@@ -35,6 +35,7 @@ library(dataPreparation)
 library(lavaan)
 library(summarytools)
 library(OneR)
+library(fastDummies)
 ```
 
 # **Data**
@@ -112,7 +113,7 @@ temp_age[d1$age >=70 & d1$age <80] <- "70-80"
 temp_age[d1$age >=80 & d1$age<90] <- "80-90"
 temp_age[d1$age >=90] <- "90>"
 #turn binned data into factor:
-d1_proc$age <- as.numeric(factor(temp_age, ordered=TRUE, levels=c("<50","50-60","60-70","70-80","80-90","90>")))
+d1_proc$age <- factor(temp_age, ordered=TRUE, levels=c("<50","50-60","60-70","70-80","80-90","90>"))
 summary(d1_proc$age)
 
 ```
@@ -277,9 +278,23 @@ srm_sodium [pos="0.363,0.557"]
 sex [pos="0.505,0.770"]
 smoking [pos="0.526,0.082"]
 time [pos="0.361,0.451"]
-age -> heart_failure
+age_<50 -> heart_failure
+age_50-60 -> heart_failure
+age_60-70 -> heart_failure
+age_70-80 -> heart_failure
+age_80-90 -> heart_failure
+age_90> -> heart_failure
 anaemia -> platelets
-cpk -> heart_failure
+cpk_200-400 -> heart_failure
+cpk_400-600 -> heart_failure
+cpk_600-800 -> heart_failure
+cpk_800-1000 -> heart_failure
+cpk_1000-1200 -> heart_failure
+cpk_1200-1400 -> heart_failure
+cpk_1400-1600 -> heart_failure
+cpk_1600-1800 -> heart_failure
+cpk_1800-2000 -> heart_failure
+cpk_2000> -> heart_failure
 diabetes -> ejection_fraction
 ejection_fraction -> heart_failure
 heart_failure -> srm_sodium
@@ -324,15 +339,16 @@ plotLocalTestResults(independency_test2)
 ## SEM (this generates the log(pi.i) error)
 
 ```{r}
-
 head(d1_proc)
-polychoric <- lavCor(d1_proc)
-
-
-localTests(g1, sample.cov=polychoric, sample.nobs=nrow(d1_proc))
+dummy_proc <- dummy_cols(d1_proc, select_columns = c('age', 'cpk'),
+           remove_selected_columns = TRUE)
+polychoric <- lavCor(dummy_proc)
+localTests(g1, sample.cov=polychoric, sample.nobs=nrow(dummy_proc))
 status(d1_proc)
 sem_model1 <- toString(g1, "lavaan")
-fit <- lavaan(sem_model1, sample.cov=polychoric, sample.nobs=nrow(d1_proc), auto.var=TRUE, data=d1_proc, ordered=c( "cpk", "ejection_fraction","platelets" ,"srm_creatinine", "srm_sodium", "time"))
+describe(dummy_proc)
+head(dummy_proc)
+fit <- lavaan(sem_model1, sample.cov=polychoric, sample.nobs=nrow(dummy_proc), auto.var=TRUE, data=dummy_proc, ordered=c( "platelets", "ejection_fraction", "srm_creatinine", "srm_sodium", "time"))
 
 lapply(lavNames(fit), function(x) class(d1_proc[,x]))
 varTable(fit)

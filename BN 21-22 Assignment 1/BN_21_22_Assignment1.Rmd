@@ -188,7 +188,7 @@ temp_sc[d1_proc$srm_creatinine >=2.5  & d1_proc$srm_creatinine <3.0] <- "2.5-3.0
 temp_sc[d1_proc$srm_creatinine >=3.0  & d1_proc$srm_creatinine <3.5] <- "3.0-3.5"
 temp_sc[d1_proc$srm_creatinine >=3.5  & d1_proc$srm_creatinine <4.0] <- "3.5-4.0"
 temp_sc[d1_proc$srm_creatinine >=4.0] <- "4.0>"
-d1_proc$serum_creatinine <- factor(temp_sc, ordered=TRUE, levels=c("<1.0","1.0-1.5","1.5-2.0","2.0-2.5","2.5-3.0","3.0-3.5","3.5-4.0","4.0>"))
+d1_proc$srm_creatinine <- factor(temp_sc, ordered=TRUE, levels=c("<1.0","1.0-1.5","1.5-2.0","2.0-2.5","2.5-3.0","3.0-3.5","3.5-4.0","4.0>"))
 ```
 
 ##### Serum-sodium
@@ -265,19 +265,19 @@ Defining the above model in dagitty syntax:
 ```{r}
 g1 <- graphLayout(dagitty('dag {
 bb="0,0,1,1"
-age [pos="0.400,0.765"]
-anaemia [pos="0.626,0.325"]
-cpk [pos="0.643,0.593"]
-diabetes [pos="0.381,0.311"]
-ejection_fraction [pos="0.521,0.323"]
+age [pos="0.213,0.767"]
+anaemia [pos="0.913,0.191"]
+cpk [pos="0.814,0.701"]
+diabetes [pos="0.387,0.127"]
+ejection_fraction [pos="0.526,0.237"]
 heart_failure [pos="0.504,0.491"]
-high_blood_pressure [pos="0.526,0.198"]
-platelets [pos="0.625,0.448"]
-srm_creatinine [pos="0.604,0.734"]
-srm_sodium [pos="0.363,0.557"]
-sex [pos="0.505,0.770"]
-smoking [pos="0.526,0.082"]
-time [pos="0.361,0.451"]
+high_blood_pressure [pos="0.661,0.123"]
+platelets [pos="0.761,0.379"]
+sex [pos="0.385,0.926"]
+smoking [pos="0.523,0.027"]
+srm_creatinine [pos="0.677,0.933"]
+srm_sodium [pos="0.128,0.495"]
+time [pos="0.196,0.265"]
 age -> heart_failure
 anaemia -> platelets
 cpk -> heart_failure
@@ -287,9 +287,9 @@ heart_failure -> srm_sodium
 heart_failure -> time
 high_blood_pressure -> ejection_fraction
 platelets -> heart_failure
-srm_creatinine -> heart_failure
 sex -> heart_failure
 smoking -> high_blood_pressure
+srm_creatinine -> heart_failure
 }
 '
 ))
@@ -326,21 +326,60 @@ plotLocalTestResults(independency_test2)
 ## SEM
 
 ```{r}
+status(d1_proc)
+```
+
+```{r}
 polychoric <- lavCor(d1_proc)
 localTests(g1, sample.cov=polychoric, sample.nobs=nrow(d1_proc))
 
 sem_model1 <- toString(g1, "lavaan")
-fit <- lavaan(sem_model1, sample.cov=polychoric, sample.nobs=nrow(d1_proc), auto.var=TRUE, data=d1_proc)
+fitted_sem <- sem(sem_model1, sample.cov=polychoric, sample.nobs=nrow(d1_proc))
 summary(fit, standardized=TRUE)
+```
+
+Lets check the model selection criteria
+
+```{r}
+print(coef(fitted_sem), method='render')
+print(summary(fitted_sem, fit.measures=TRUE, rsquare=TRUE, standardize=TRUE), method='render')
+fitmeasures(fitted_sem)
+```
+
+Model diagnostics, so we can see which variables have low or high loading with heart_failure. These can be considered for removal from the graph.
+
+```{r}
+fitted(fitted_sem)
+inspect(fitted_sem, what="cor.all")
+```
+
+```{r}
+resid(fitted_sem, "cor")
+plot_matrix <- function(matrix_toplot){
+  corrplot::corrplot(matrix_toplot, is.corr = FALSE,
+                     type = 'lower',
+                     order = "original",
+                     tl.col='black', tl.cex=.75)
+}
+a<- resid(fitted_sem, type = 'cor')$cov
+plot_matrix(a)
+```
+
+```{r}
+lavInspect(fitted_sem, "theta")
+print(modindices(fitted_sem))
+```
+
+```{r}
+modificationindices(fitted_sem, minimum.value = 15)
 ```
 
 Lets plot the SEM model:
 
 ```{r}
-x <- lavaan::parTable(sem_model1)
-x <- x[c(1:12),]}
-cg <- coordinates(g)
-fg <- lavaanToGraph(x, digits = 2)
-coordinates(fg) <- cg
-plot(fg, show.coefficients = TRUE)
+x <- lavaan::parTable(fitted_sem)
+cg1 <- coordinates(g1)
+fg1 <- lavaanToGraph(x, digits = 2)
+coordinates(fg1) <- cg1
+plot(fg1, show.coefficients = TRUE)
 ```

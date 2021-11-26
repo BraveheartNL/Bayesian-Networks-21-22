@@ -278,9 +278,7 @@ sex [pos="0.505,0.770"]
 smoking [pos="0.526,0.082"]
 time [pos="0.361,0.451"]
 age -> heart_failure
-age -> diabetes
 anaemia -> platelets
-anaemia -> cpk
 cpk -> heart_failure
 diabetes -> ejection_fraction
 ejection_fraction -> heart_failure
@@ -289,9 +287,7 @@ heart_failure -> time
 high_blood_pressure -> ejection_fraction
 platelets -> heart_failure
 heart_failure -> srm_creatinine
-srm_creatinine -> srm_sodium
 sex -> heart_failure
-sex -> smoking
 smoking -> high_blood_pressure
 }
 '
@@ -336,7 +332,7 @@ polychoric <- lavCor(d1_proc)
 localTests(g1, sample.cov=polychoric, sample.nobs=nrow(d1_proc))
 status(d1_proc)
 sem_model1 <- toString(g1, "lavaan")
-fit <- lavaan(sem_model1, sample.cov=polychoric, sample.nobs=nrow(d1_proc), auto.var=TRUE, data=d1_proc, ordered=c( "cpk", "ejection_fraction","platelets" ,"srm_creatinine", "srm_sodium", "time"))
+fit <- lavaan(sem_model1, sample.cov=polychoric, sample.nobs=nrow(d1_proc), auto.var=TRUE, data=d1_proc, conditional.x=FALSE, ordered=c( "cpk", "ejection_fraction","platelets" ,"srm_creatinine", "srm_sodium", "time"))
 
 lapply(lavNames(fit), function(x) class(d1_proc[,x]))
 varTable(fit)

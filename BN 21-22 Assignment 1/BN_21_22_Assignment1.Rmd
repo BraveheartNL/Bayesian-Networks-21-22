@@ -326,13 +326,13 @@ plotLocalTestResults(independency_test2)
 ```{r}
 
 head(d1_proc)
+d1_proc$cpk <- as.numeric(d1_proc$cpk)
 polychoric <- lavCor(d1_proc)
-
 
 localTests(g1, sample.cov=polychoric, sample.nobs=nrow(d1_proc))
 status(d1_proc)
 sem_model1 <- toString(g1, "lavaan")
-fit <- lavaan(sem_model1, sample.cov=polychoric, sample.nobs=nrow(d1_proc), auto.var=TRUE, data=d1_proc, ordered=c( "cpk", "ejection_fraction","platelets" ,"srm_creatinine", "srm_sodium", "time"))
+fit <- lavaan(sem_model1, sample.cov=polychoric, sample.nobs=nrow(d1_proc), auto.var=TRUE, data=d1_proc, ordered=TRUE, conditional.x=FALSE)
 
 lapply(lavNames(fit), function(x) class(d1_proc[,x]))
 varTable(fit)

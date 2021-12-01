@@ -156,34 +156,37 @@ d1_proc$time <- ordered(temp_time,  levels=c("<30","30-60","60-90","90-120","120
 ```{r }
 g1 <- graphLayout(dagitty('dag {
 bb="0,0,1,1"
-age [pos="0.400,0.765"]
-anaemia [pos="0.626,0.325"]
-cpk [pos="0.643,0.593"]
-diabetes [pos="0.381,0.311"]
-ejection_fraction [pos="0.521,0.323"]
+age [pos="0.213,0.767"]
+anaemia [pos="0.913,0.191"]
+cpk [pos="0.814,0.701"]
+diabetes [pos="0.387,0.127"]
+ejection_fraction [pos="0.526,0.237"]
 DEATH_EVENT [pos="0.504,0.491"]
-high_blood_pressure [pos="0.526,0.198"]
-platelets [pos="0.625,0.448"]
-srm_creatinine [pos="0.604,0.734"]
-srm_sodium [pos="0.363,0.557"]
-sex [pos="0.505,0.770"]
-smoking [pos="0.526,0.082"]
-time [pos="0.361,0.451"]
+high_blood_pressure [pos="0.661,0.123"]
+platelets [pos="0.761,0.379"]
+sex [pos="0.385,0.926"]
+smoking [pos="0.523,0.027"]
+srm_creatinine [pos="0.677,0.933"]
+srm_sodium [pos="0.128,0.495"]
+time [pos="0.196,0.265"]
 age -> DEATH_EVENT
-anaemia -> platelets
+age -> cpk
 cpk -> DEATH_EVENT
 diabetes -> ejection_fraction
 ejection_fraction -> DEATH_EVENT
 DEATH_EVENT -> srm_sodium
 DEATH_EVENT -> time
 high_blood_pressure -> ejection_fraction
+anaemia -> platelets
 platelets -> DEATH_EVENT
-srm_creatinine -> DEATH_EVENT
 sex -> DEATH_EVENT
 smoking -> high_blood_pressure
+srm_creatinine -> DEATH_EVENT
+sex -> smoking
+sex -> diabetes
+high_blood_pressure -> DEATH_EVENT
 }
-'
-))
+'))
 
 ```
 
@@ -194,8 +197,13 @@ plot(g1)
 ```{r}
 chi_square_test <- localTests(g1, d1_proc, type = 'cis.chisq')
 plotLocalTestResults(chi_square_test)
-top_rmsea <- chi_square_test[order(chi_square_test$rmsea,decreasing = TRUE),]
+top_rmsea <- chi_square_test[order(chi_square_test$p.value, decreasing = FALSE),]
 print(top_rmsea)
+
+
+#library(xtable)
+#print(xtable(top_rmsea[1:12,1:4 ], type = "latex"), file = "filename2.tex")
+
 ```
 
 - Sex and smoking are very dependent, research on this checks out; Men smoke way more than women. 
@@ -305,6 +313,12 @@ top_corr <- corrtest[order(corrtest$estimate,decreasing = TRUE),]
 print(top_corr)
 down_corr <- corrtest[order(corrtest$estimate,decreasing = FALSE),]
 print(down_corr)
+
+corrtest <- localTests(g1, sample.cov = d2_proc_corr, sample.nobs=nrow(d2_proc))
+plotLocalTestResults(corrtest)
+top_corr <- corrtest[order(corrtest$p.value,decreasing = FALSE),]
+print(top_corr)
+
 ```
 Positive correlations
 - Similar to the chi-squared test, sex and smoking are strongly correlated.
@@ -332,6 +346,7 @@ fit <- sem("srm_sodium~DEATH_EVENT
            time~DEATH_EVENT
            DEATH_EVENT~age
            platelets~anaemia
+           anaemia~cpk
            DEATH_EVENT~cpk
            ejection_fraction~diabetes
            DEATH_EVENT~ejection_fraction
@@ -340,10 +355,9 @@ fit <- sem("srm_sodium~DEATH_EVENT
            DEATH_EVENT~sex
            high_blood_pressure~smoking
            DEATH_EVENT~srm_creatinine
+           DEATH_EVENT~high_blood_pressure
            smoking ~ sex
-           0*diabetes ~~ 0*smoking 
            0*anaemia ~~ 0*age
-           0*cpk ~~ 0*sex 
            ", sample.cov = d1_proc_corr, sample.nobs = nrow(d1_proc))
 summary(fit, standardized = TRUE, fit.measures = TRUE)
 fit_est = parameterEstimates(fit)
@@ -361,98 +375,77 @@ fg1 <- lavaanToGraph(x, digits = 2)
 coordinates(fg1) <- cg1
 plot(fg1, show.coefficients = TRUE)
 ```
+```{r }
+install.packages("semPlot")
+install.packages("lavaanPlot")
 
-## Exploring model
-```{r}
-resid(fit, "cor")
-plot_matrix <- function(matrix_toplot){
-  corrplot::corrplot(matrix_toplot, is.corr = FALSE,
-                     type = 'lower',
-                     order = "original",
-                     tl.col='black', tl.cex=.75)
-}
-a<- resid(fit, type = 'cor')$cov
-plot_matrix(a)
 
+library(semPlot)
+library(lavaanPlot)
 ```
 
 
 
 ```{r }
+d1_proc_corr = lavCor(d1_proc)
+sem_model <- toString(g1, "lavaan")
 
-for( x in names(g1) ){
-  px <- parents( g1, x )
-  for( y in px ){
-    tst <- bayesianNetworks::ci.test( x, y, setdiff(px,y), data=d1_proc )
-    print( paste(y,'->',x, tst$effect, tst$p.value ) )
-}
-}
+sem_model <- "
+            srm_sodium~DEATH_EVENT
+            time~DEATH_EVENT
+            DEATH_EVENT~age
+            cpk~age
+            platelets~anaemia
+            DEATH_EVENT~cpk
+            ejection_fraction~diabetes
+            DEATH_EVENT~ejection_fraction
+            DEATH_EVENT~high_blood_pressure
+            ejection_fraction~high_blood_pressure
+            DEATH_EVENT~platelets
+            DEATH_EVENT~sex
+            diabetes~sex
+            smoking~sex
+            high_blood_pressure~smoking
+            DEATH_EVENT~srm_creatinine
+           "
 
-```
-```{r }
-d1=read.table("./heart_failure_clinical_records_dataset.csv", sep=',', header=TRUE)
-d1 <- rename(d1, cpk = creatinine_phosphokinase)
-d1 <- rename(d1, srm_creatinine = serum_creatinine)
-d1 <- rename(d1, srm_sodium = serum_sodium)
-d1_proc = data.frame(scale(d1))
+fit <- sem(sem_model, sample.cov = d1_proc_corr, sample.nobs = nrow(d1_proc), fixed.x = FALSE)
+summary(fit, standardized = TRUE, fit.measures = TRUE)
 
-sem_test <- toString(g1, "lavaan")
 
-mdl <- sem("srm_sodium~DEATH_EVENT
-           time~DEATH_EVENT
-           DEATH_EVENT~age
-           platelets~anaemia
-           DEATH_EVENT~cpk
-           ejection_fraction~diabetes
-           DEATH_EVENT~ejection_fraction
-           ejection_fraction~high_blood_pressure
-           DEATH_EVENT~platelets
-           DEATH_EVENT~sex
-           high_blood_pressure~smoking
-           DEATH_EVENT~srm_creatinine
-           " , data=d1_proc, fixed.x = FALSE)
-summary( mdl )
-
-x <- lavaan::parTable(mdl)
-cg1 <- coordinates(g1)
-fg1 <- lavaanToGraph(x, digits = 2)
-coordinates(fg1) <- cg1
-plot(fg1, show.coefficients = TRUE)
+semPaths(fit, what="est", whatLabels = "par", style = "OpenMx", layout = "tree2", residuals = FALSE, nCharNodes=0, edge.label.cex = 1.5, asize = 6, minimum = 0.1, sizeMan = 12,sizeMan2 = 5,curvature = 1.5, rotation=1,curve=2, exoCov=FALSE)
 
 
 
+#x <- lavaan::parTable(fit)
+#cg1 <- coordinates(g1)
+#fg1 <- lavaanToGraph(x, digits = 2)
+#coordinates(fg1) <- cg1
+#plot(fg1, show.coefficients = TRUE)
 
-mdl <- sem("srm_sodium~DEATH_EVENT
-           time~DEATH_EVENT
-           DEATH_EVENT~age
-           platelets~anaemia
-           DEATH_EVENT~cpk
-           ejection_fraction~diabetes
-           DEATH_EVENT~ejection_fraction
-           ejection_fraction~high_blood_pressure
-           DEATH_EVENT~platelets
-           DEATH_EVENT~sex
-           high_blood_pressure~smoking
-           DEATH_EVENT~srm_creatinine
-           smoking ~ sex
-           0*diabetes ~~ 0*smoking 
-           0*anaemia ~~ 0*age
-           0*cpk ~~ 0*sex 
-           " , data=d1_proc, fixed.x = FALSE)
-summary( mdl )
 
-x <- lavaan::parTable(mdl)
-cg1 <- coordinates(g1)
-fg1 <- lavaanToGraph(x, digits = 2)
-coordinates(fg1) <- cg1
-plot(fg1, show.coefficients = TRUE)
+
 ```
 
 
 
-"srm_sodium~DEATH_EVENT time~DEATH_EVENT DEATH_EVENT~age platelets~anaemia DEATH_EVENT~cpk ejection_fraction~diabetes  DEATH_EVENT~ejection_fraction ejection_fraction~high_blood_pressure DEATH_EVENT~platelets DEATH_EVENT~sex high_blood_pressure~smoking DEATH_EVENT~srm_creatinine"
-
-
-
+sem_model <- "
+            srm_sodium~DEATH_EVENT
+            time~DEATH_EVENT
+            DEATH_EVENT~age
+            cpk~age
+            platelets~anaemia
+            DEATH_EVENT~cpk
+            ejection_fraction~diabetes
+            DEATH_EVENT~ejection_fraction
+            DEATH_EVENT~high_blood_pressure
+            ejection_fraction~high_blood_pressure
+            DEATH_EVENT~platelets
+            DEATH_EVENT~sex
+            diabetes~sex
+            smoking~sex
+            high_blood_pressure~smoking
+            DEATH_EVENT~srm_creatinine
+           "
 
 

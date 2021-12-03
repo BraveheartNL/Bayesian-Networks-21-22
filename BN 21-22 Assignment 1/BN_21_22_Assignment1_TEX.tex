@@ -1,0 +1,1062 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\title{Bayesian Networks and Causal Inference Assignment 1 Code
+Notebook}
+\author{Evander van Wolfswinkel\footnote{s1057895} \and Janneke
+Verbeek\footnote{s1011065} \and Niek Derksen\footnote{s4363779}}
+\date{October 2021}
+
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Bayesian Networks and Causal Inference Assignment 1 Code Notebook},
+  pdfauthor={Evander van Wolfswinkel; Janneke Verbeek; Niek Derksen},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\begin{document}
+\maketitle
+
+\small
+
+\hypertarget{import-packages}{%
+\subsubsection{Import packages}\label{import-packages}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(semPlot)}
+\FunctionTok{library}\NormalTok{(bayesianNetworks)}
+\FunctionTok{library}\NormalTok{(funModeling) }
+\FunctionTok{library}\NormalTok{(tidyverse) }
+\FunctionTok{library}\NormalTok{(Hmisc)}
+\FunctionTok{library}\NormalTok{(bnlearn)}
+\FunctionTok{library}\NormalTok{(naivebayes)}
+\FunctionTok{library}\NormalTok{(dagitty)}
+\FunctionTok{library}\NormalTok{(dataPreparation)}
+\FunctionTok{library}\NormalTok{(lavaan)}
+\FunctionTok{library}\NormalTok{(summarytools)}
+\FunctionTok{library}\NormalTok{(OneR)}
+\FunctionTok{library}\NormalTok{(corrplot)}
+\FunctionTok{library}\NormalTok{(knitr)}
+\FunctionTok{library}\NormalTok{(readxl)}
+\FunctionTok{library}\NormalTok{(dplyr)}
+\FunctionTok{library}\NormalTok{(kableExtra)}
+\end{Highlighting}
+\end{Shaded}
+
+\normalsize
+\newpage
+
+\hypertarget{import-dataset}{%
+\subsection{Import dataset}\label{import-dataset}}
+
+Assuming the ``heart\_failure\_clinical\_records\_dataset.csv''-file
+from
+\href{https://www.kaggle.com/andrewmvd/heart-failure-clinical-data/download}{this}
+Kaggle page is present in the current working directory.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{d1}\OtherTok{=}\FunctionTok{read.table}\NormalTok{(}\StringTok{"./heart\_failure\_clinical\_records\_dataset.csv"}\NormalTok{, }\AttributeTok{sep=}\StringTok{\textquotesingle{},\textquotesingle{}}\NormalTok{, }\AttributeTok{header=}\ConstantTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{exploration}{%
+\subsection{Exploration}\label{exploration}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{dfSummary}\NormalTok{(d1, }\AttributeTok{plain.ascii  =} \ConstantTok{FALSE}\NormalTok{,}
+          \AttributeTok{style        =} \StringTok{\textquotesingle{}grid\textquotesingle{}}\NormalTok{,}
+          \AttributeTok{graph.magnif =} \FloatTok{0.85}\NormalTok{,}
+          \AttributeTok{varnumbers =} \ConstantTok{FALSE}\NormalTok{,}
+          \AttributeTok{valid.col    =} \ConstantTok{FALSE}\NormalTok{, }\AttributeTok{tmp.img.dir =} \StringTok{"/tmp"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## temporary images written to 'C:\tmp'
+\end{verbatim}
+
+\hypertarget{data-frame-summary}{%
+\subsubsection{Data Frame Summary}\label{data-frame-summary}}
+
+\hypertarget{d1}{%
+\paragraph{d1}\label{d1}}
+
+\textbf{Dimensions:} 299 x 13\\
+\textbf{Duplicates:} 0
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.24}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.28}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.19}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.20}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.09}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+Variable
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Stats / Values
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Freqs (\% of Valid)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Graph
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Missing
+\end{minipage} \\
+\midrule
+\endhead
+\begin{minipage}[t]{\linewidth}\raggedright
+age\\
+{[}numeric{]}\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+Mean (sd) : 60.8 (11.9)\\
+min \textless{} med \textless{} max:\\
+40 \textless{} 60 \textless{} 95\\
+IQR (CV) : 19 (0.2)\strut
+\end{minipage} & 47 distinct values & \includegraphics{/tmp/ds0404.png}
+& \begin{minipage}[t]{\linewidth}\raggedright
+0\\
+(0.0\%)\strut
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+anaemia\\
+{[}integer{]}\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+Min : 0\\
+Mean : 0.4\\
+Max : 1\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+0 : 170 (56.9\%)\\
+1 : 129 (43.1\%)\strut
+\end{minipage} & \includegraphics{/tmp/ds0405.png} &
+\begin{minipage}[t]{\linewidth}\raggedright
+0\\
+(0.0\%)\strut
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+creatinine\_phosphokinase\\
+{[}integer{]}\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+Mean (sd) : 581.8 (970.3)\\
+min \textless{} med \textless{} max:\\
+23 \textless{} 250 \textless{} 7861\\
+IQR (CV) : 465.5 (1.7)\strut
+\end{minipage} & 208 distinct values & \includegraphics{/tmp/ds0406.png}
+& \begin{minipage}[t]{\linewidth}\raggedright
+0\\
+(0.0\%)\strut
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+diabetes\\
+{[}integer{]}\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+Min : 0\\
+Mean : 0.4\\
+Max : 1\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+0 : 174 (58.2\%)\\
+1 : 125 (41.8\%)\strut
+\end{minipage} & \includegraphics{/tmp/ds0407.png} &
+\begin{minipage}[t]{\linewidth}\raggedright
+0\\
+(0.0\%)\strut
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+ejection\_fraction\\
+{[}integer{]}\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+Mean (sd) : 38.1 (11.8)\\
+min \textless{} med \textless{} max:\\
+14 \textless{} 38 \textless{} 80\\
+IQR (CV) : 15 (0.3)\strut
+\end{minipage} & 17 distinct values & \includegraphics{/tmp/ds0408.png}
+& \begin{minipage}[t]{\linewidth}\raggedright
+0\\
+(0.0\%)\strut
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+high\_blood\_pressure\\
+{[}integer{]}\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+Min : 0\\
+Mean : 0.4\\
+Max : 1\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+0 : 194 (64.9\%)\\
+1 : 105 (35.1\%)\strut
+\end{minipage} & \includegraphics{/tmp/ds0409.png} &
+\begin{minipage}[t]{\linewidth}\raggedright
+0\\
+(0.0\%)\strut
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+platelets\\
+{[}numeric{]}\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+Mean (sd) : 263358 (97804.2)\\
+min \textless{} med \textless{} max:\\
+25100 \textless{} 262000 \textless{} 850000\\
+IQR (CV) : 91000 (0.4)\strut
+\end{minipage} & 176 distinct values & \includegraphics{/tmp/ds0410.png}
+& \begin{minipage}[t]{\linewidth}\raggedright
+0\\
+(0.0\%)\strut
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+serum\_creatinine\\
+{[}numeric{]}\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+Mean (sd) : 1.4 (1)\\
+min \textless{} med \textless{} max:\\
+0.5 \textless{} 1.1 \textless{} 9.4\\
+IQR (CV) : 0.5 (0.7)\strut
+\end{minipage} & 40 distinct values & \includegraphics{/tmp/ds0411.png}
+& \begin{minipage}[t]{\linewidth}\raggedright
+0\\
+(0.0\%)\strut
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+serum\_sodium\\
+{[}integer{]}\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+Mean (sd) : 136.6 (4.4)\\
+min \textless{} med \textless{} max:\\
+113 \textless{} 137 \textless{} 148\\
+IQR (CV) : 6 (0)\strut
+\end{minipage} & 27 distinct values & \includegraphics{/tmp/ds0412.png}
+& \begin{minipage}[t]{\linewidth}\raggedright
+0\\
+(0.0\%)\strut
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+sex\\
+{[}integer{]}\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+Min : 0\\
+Mean : 0.6\\
+Max : 1\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+0 : 105 (35.1\%)\\
+1 : 194 (64.9\%)\strut
+\end{minipage} & \includegraphics{/tmp/ds0413.png} &
+\begin{minipage}[t]{\linewidth}\raggedright
+0\\
+(0.0\%)\strut
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+smoking\\
+{[}integer{]}\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+Min : 0\\
+Mean : 0.3\\
+Max : 1\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+0 : 203 (67.9\%)\\
+1 : 96 (32.1\%)\strut
+\end{minipage} & \includegraphics{/tmp/ds0414.png} &
+\begin{minipage}[t]{\linewidth}\raggedright
+0\\
+(0.0\%)\strut
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+time\\
+{[}integer{]}\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+Mean (sd) : 130.3 (77.6)\\
+min \textless{} med \textless{} max:\\
+4 \textless{} 115 \textless{} 285\\
+IQR (CV) : 130 (0.6)\strut
+\end{minipage} & 148 distinct values & \includegraphics{/tmp/ds0415.png}
+& \begin{minipage}[t]{\linewidth}\raggedright
+0\\
+(0.0\%)\strut
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+DEATH\_EVENT\\
+{[}integer{]}\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+Min : 0\\
+Mean : 0.3\\
+Max : 1\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+0 : 203 (67.9\%)\\
+1 : 96 (32.1\%)\strut
+\end{minipage} & \includegraphics{/tmp/ds0416.png} &
+\begin{minipage}[t]{\linewidth}\raggedright
+0\\
+(0.0\%)\strut
+\end{minipage} \\
+\bottomrule
+\end{longtable}
+
+All data is complete. Lets check data type:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{describe}\NormalTok{(d1)  }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{html}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{plot\_num}\NormalTok{(d1)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics[width=1\linewidth,height=0.4\textheight]{BN_21_22_Assignment1_Evander_files/figure-latex/unnamed-chunk-6-1} \end{center}
+\newpage
+
+\hypertarget{preprocessing}{%
+\subsection{Preprocessing}\label{preprocessing}}
+
+Shorten some long variable names.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{d1 }\OtherTok{\textless{}{-}} \FunctionTok{rename}\NormalTok{(d1, }\AttributeTok{cpk =}\NormalTok{ creatinine\_phosphokinase)}
+\NormalTok{d1 }\OtherTok{\textless{}{-}} \FunctionTok{rename}\NormalTok{(d1, }\AttributeTok{srm\_creatinine =}\NormalTok{ serum\_creatinine)}
+\NormalTok{d1 }\OtherTok{\textless{}{-}} \FunctionTok{rename}\NormalTok{(d1, }\AttributeTok{srm\_sodium =}\NormalTok{ serum\_sodium)}
+\end{Highlighting}
+\end{Shaded}
+
+Create extra dataset to perform processing on.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{d1\_proc }\OtherTok{=} \FunctionTok{data.frame}\NormalTok{(d1)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{continuous-and-binary-data}{%
+\paragraph{Continuous and binary
+data}\label{continuous-and-binary-data}}
+
+Order binary variables
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{d1\_proc}\SpecialCharTok{$}\NormalTok{anaemia }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{ordered}\NormalTok{(d1}\SpecialCharTok{$}\NormalTok{anaemia))}
+\NormalTok{d1\_proc}\SpecialCharTok{$}\NormalTok{sex }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{ordered}\NormalTok{(d1}\SpecialCharTok{$}\NormalTok{sex))}
+\NormalTok{d1\_proc}\SpecialCharTok{$}\NormalTok{high\_blood\_pressure }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{ordered}\NormalTok{(d1}\SpecialCharTok{$}\NormalTok{high\_blood\_pressure))}
+\NormalTok{d1\_proc}\SpecialCharTok{$}\NormalTok{diabetes }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{ordered}\NormalTok{(d1}\SpecialCharTok{$}\NormalTok{diabetes))}
+\NormalTok{d1\_proc}\SpecialCharTok{$}\NormalTok{smoking }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{ordered}\NormalTok{(d1}\SpecialCharTok{$}\NormalTok{smoking))}
+\NormalTok{d1\_proc}\SpecialCharTok{$}\NormalTok{DEATH\_EVENT }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{ordered}\NormalTok{(d1}\SpecialCharTok{$}\NormalTok{DEATH\_EVENT))}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{bin-all-continuous}{%
+\paragraph{Bin all continuous}\label{bin-all-continuous}}
+
+Bin continuous variables using the histograms of the data to create
+regularly spaces bins
+
+\scriptsize
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{temp\_age }\OtherTok{\textless{}{-}} \FunctionTok{rep}\NormalTok{(}\StringTok{"\textless{}97"}\NormalTok{, }\FunctionTok{nrow}\NormalTok{(d1\_proc)) }\CommentTok{\#96 is max age}
+\NormalTok{temp\_age[d1\_proc}\SpecialCharTok{$}\NormalTok{age }\SpecialCharTok{\textgreater{}=}\DecValTok{0} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{age }\SpecialCharTok{\textless{}}\DecValTok{50}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"\textless{}50"}
+\NormalTok{temp\_age[d1\_proc}\SpecialCharTok{$}\NormalTok{age }\SpecialCharTok{\textgreater{}=}\DecValTok{50} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{age }\SpecialCharTok{\textless{}}\DecValTok{60}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"50{-}60"}
+\NormalTok{temp\_age[d1\_proc}\SpecialCharTok{$}\NormalTok{age }\SpecialCharTok{\textgreater{}=}\DecValTok{60} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{age }\SpecialCharTok{\textless{}}\DecValTok{70}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"60{-}70"}
+\NormalTok{temp\_age[d1\_proc}\SpecialCharTok{$}\NormalTok{age }\SpecialCharTok{\textgreater{}=}\DecValTok{70} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{age }\SpecialCharTok{\textless{}}\DecValTok{80}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"70{-}80"}
+\NormalTok{temp\_age[d1\_proc}\SpecialCharTok{$}\NormalTok{age }\SpecialCharTok{\textgreater{}=}\DecValTok{80} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{age}\SpecialCharTok{\textless{}}\DecValTok{90}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"80{-}90"}
+\NormalTok{temp\_age[d1\_proc}\SpecialCharTok{$}\NormalTok{age }\SpecialCharTok{\textgreater{}=}\DecValTok{90}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"90\textgreater{}"}
+\CommentTok{\#turn binned data into factor:}
+\NormalTok{d1\_proc}\SpecialCharTok{$}\NormalTok{age }\OtherTok{\textless{}{-}} \FunctionTok{ordered}\NormalTok{(temp\_age, }\AttributeTok{levels=}\FunctionTok{c}\NormalTok{(}\StringTok{"\textless{}50"}\NormalTok{,}\StringTok{"50{-}60"}\NormalTok{,}\StringTok{"60{-}70"}\NormalTok{,}\StringTok{"70{-}80"}\NormalTok{,}\StringTok{"80{-}90"}\NormalTok{,}
+                                          \StringTok{"90\textgreater{}"}\NormalTok{))}
+
+\NormalTok{temp\_cpk }\OtherTok{\textless{}{-}} \FunctionTok{rep}\NormalTok{(}\StringTok{"\textless{}7862"}\NormalTok{, }\FunctionTok{nrow}\NormalTok{(d1\_proc)) }\CommentTok{\#96 is max cpk}
+\NormalTok{temp\_cpk[d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textgreater{}=}\DecValTok{0} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textless{}}\DecValTok{200}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"0{-}200"}
+\NormalTok{temp\_cpk[d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textgreater{}=}\DecValTok{200} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textless{}}\DecValTok{400}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"200{-}400"}
+\NormalTok{temp\_cpk[d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textgreater{}=}\DecValTok{400} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textless{}}\DecValTok{600}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"400{-}600"}
+\NormalTok{temp\_cpk[d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textgreater{}=}\DecValTok{600} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textless{}}\DecValTok{800}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"600{-}800"}
+\NormalTok{temp\_cpk[d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textgreater{}=}\DecValTok{800} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textless{}}\DecValTok{1000}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"800{-}1000"}
+\NormalTok{temp\_cpk[d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textgreater{}=}\DecValTok{1000} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textless{}}\DecValTok{1200}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"1000{-}1200"}
+\NormalTok{temp\_cpk[d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textgreater{}=}\DecValTok{1200} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textless{}}\DecValTok{1400}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"1200{-}1400"}
+\NormalTok{temp\_cpk[d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textgreater{}=}\DecValTok{1400} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textless{}}\DecValTok{1600}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"1400{-}1600"}
+\NormalTok{temp\_cpk[d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textgreater{}=}\DecValTok{1600} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textless{}}\DecValTok{1800}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"1600{-}1800"}
+\NormalTok{temp\_cpk[d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textgreater{}=}\DecValTok{1800} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textless{}}\DecValTok{2000}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"1800{-}2000"}
+\NormalTok{temp\_cpk[d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\SpecialCharTok{\textgreater{}=}\DecValTok{2000}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"2000\textgreater{}"}
+\CommentTok{\#turn binned data into factor:}
+\NormalTok{d1\_proc}\SpecialCharTok{$}\NormalTok{cpk }\OtherTok{\textless{}{-}} \FunctionTok{ordered}\NormalTok{(temp\_cpk, }\AttributeTok{levels=}\FunctionTok{c}\NormalTok{(}\StringTok{"0{-}200"}\NormalTok{, }\StringTok{"200{-}400"}\NormalTok{, }\StringTok{"400{-}600"}\NormalTok{,}
+                                          \StringTok{"600{-}800"}\NormalTok{,}\StringTok{"800{-}1000"}\NormalTok{,}\StringTok{"1000{-}1200"}\NormalTok{,}
+                                          \StringTok{"1200{-}1400"}\NormalTok{,}\StringTok{"1400{-}1600"}\NormalTok{,}
+                                          \StringTok{"1600{-}1800"}\NormalTok{,}\StringTok{"1800{-}2000"}\NormalTok{,}
+                                          \StringTok{"2000\textgreater{}"}\NormalTok{))}
+
+\NormalTok{temp\_ef }\OtherTok{\textless{}{-}} \FunctionTok{rep}\NormalTok{(}\StringTok{"\textless{}81"}\NormalTok{, }\FunctionTok{nrow}\NormalTok{(d1\_proc)) }\CommentTok{\#80 is max ef}
+\NormalTok{temp\_ef[d1\_proc}\SpecialCharTok{$}\NormalTok{ejection\_fraction }\SpecialCharTok{\textgreater{}=}\DecValTok{0}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{ejection\_fraction }\SpecialCharTok{\textless{}}\DecValTok{20}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"\textless{}20"}
+\NormalTok{temp\_ef[d1\_proc}\SpecialCharTok{$}\NormalTok{ejection\_fraction }\SpecialCharTok{\textgreater{}=}\DecValTok{20} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{ejection\_fraction }\SpecialCharTok{\textless{}}\DecValTok{30}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"20{-}30"}
+\NormalTok{temp\_ef[d1\_proc}\SpecialCharTok{$}\NormalTok{ejection\_fraction }\SpecialCharTok{\textgreater{}=}\DecValTok{30} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{ejection\_fraction }\SpecialCharTok{\textless{}}\DecValTok{40}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"30{-}40"}
+\NormalTok{temp\_ef[d1\_proc}\SpecialCharTok{$}\NormalTok{ejection\_fraction }\SpecialCharTok{\textgreater{}=}\DecValTok{40} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{ejection\_fraction }\SpecialCharTok{\textless{}}\DecValTok{50}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"40{-}50"}
+\NormalTok{temp\_ef[d1\_proc}\SpecialCharTok{$}\NormalTok{ejection\_fraction }\SpecialCharTok{\textgreater{}=}\DecValTok{50} \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{ejection\_fraction }\SpecialCharTok{\textless{}}\DecValTok{60}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"50{-}60"}
+\NormalTok{temp\_ef[d1\_proc}\SpecialCharTok{$}\NormalTok{ejection\_fraction }\SpecialCharTok{\textgreater{}=}\DecValTok{60}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"60\textgreater{}"}
+\CommentTok{\#turn binned data into factor:}
+\NormalTok{d1\_proc}\SpecialCharTok{$}\NormalTok{ejection\_fraction }\OtherTok{\textless{}{-}} \FunctionTok{ordered}\NormalTok{(temp\_ef, }\AttributeTok{levels=}\FunctionTok{c}\NormalTok{(}\StringTok{"\textless{}20"}\NormalTok{,}\StringTok{"20{-}30"}\NormalTok{,}\StringTok{"30{-}40"}\NormalTok{,}
+                                                       \StringTok{"40{-}50"}\NormalTok{,}\StringTok{"50{-}60"}\NormalTok{,}\StringTok{"60\textgreater{}"}\NormalTok{))}
+
+\NormalTok{temp\_plt }\OtherTok{\textless{}{-}} \FunctionTok{rep}\NormalTok{(}\StringTok{"\textless{}850k"}\NormalTok{, }\FunctionTok{nrow}\NormalTok{(d1\_proc)) }\CommentTok{\#850k is max platelets}
+\NormalTok{temp\_plt[d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textgreater{}=}\DecValTok{0}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textless{}}\DecValTok{50000}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"\textless{}50k"}
+\NormalTok{temp\_plt[d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textgreater{}=}\DecValTok{50000}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textless{}}\DecValTok{100000}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"50k{-}100k"}
+\NormalTok{temp\_plt[d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textgreater{}=}\DecValTok{100000}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textless{}}\DecValTok{150000}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"100k{-}150k"}
+\NormalTok{temp\_plt[d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textgreater{}=}\DecValTok{150000}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textless{}}\DecValTok{200000}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"150k{-}200k"}
+\NormalTok{temp\_plt[d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textgreater{}=}\DecValTok{200000}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textless{}}\DecValTok{250000}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"200k{-}250k"}
+\NormalTok{temp\_plt[d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textgreater{}=}\DecValTok{250000}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textless{}}\DecValTok{300000}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"250k{-}300k"}
+\NormalTok{temp\_plt[d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textgreater{}=}\DecValTok{300000}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textless{}}\DecValTok{350000}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"300k{-}350k"}
+\NormalTok{temp\_plt[d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textgreater{}=}\DecValTok{350000}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textless{}}\DecValTok{400000}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"350k{-}400k"}
+\NormalTok{temp\_plt[d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textgreater{}=}\DecValTok{400000}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textless{}}\DecValTok{450000}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"400k{-}450k"}
+\NormalTok{temp\_plt[d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textgreater{}=}\DecValTok{450000}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textless{}}\DecValTok{500000}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"450k{-}500k"}
+\NormalTok{temp\_plt[d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\SpecialCharTok{\textgreater{}=}\DecValTok{500000}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"500k\textgreater{}"}
+\CommentTok{\#turn binned data into factor}
+\NormalTok{d1\_proc}\SpecialCharTok{$}\NormalTok{platelets }\OtherTok{\textless{}{-}} \FunctionTok{ordered}\NormalTok{(temp\_plt, }\AttributeTok{levels=}\FunctionTok{c}\NormalTok{(}\StringTok{"\textless{}50k"}\NormalTok{,}\StringTok{"50k{-}100k"}\NormalTok{,}\StringTok{"100k{-}150k"}\NormalTok{,}
+                                                \StringTok{"150k{-}200k"}\NormalTok{,}\StringTok{"200k{-}250k"}\NormalTok{,}\StringTok{"250k{-}300k"}\NormalTok{,}
+                                                \StringTok{"300k{-}350k"}\NormalTok{,}\StringTok{"350k{-}400k"}\NormalTok{,}
+                                                \StringTok{"400k{-}450k"}\NormalTok{,}\StringTok{"450k{-}500k"}\NormalTok{,}\StringTok{"500k\textgreater{}"}\NormalTok{))}
+
+\NormalTok{temp\_sc }\OtherTok{\textless{}{-}} \FunctionTok{rep}\NormalTok{(}\StringTok{"\textless{}9.5"}\NormalTok{, }\FunctionTok{nrow}\NormalTok{(d1\_proc)) }\CommentTok{\#850k is max platelets}
+\NormalTok{temp\_sc[d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_creatinine }\SpecialCharTok{\textgreater{}=}\DecValTok{0}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_creatinine }\SpecialCharTok{\textless{}}\FloatTok{1.0}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"\textless{}1.0"}
+\NormalTok{temp\_sc[d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_creatinine }\SpecialCharTok{\textgreater{}=}\FloatTok{1.0}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_creatinine }\SpecialCharTok{\textless{}}\FloatTok{1.5}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"1.0{-}1.5"}
+\NormalTok{temp\_sc[d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_creatinine }\SpecialCharTok{\textgreater{}=}\FloatTok{1.5}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_creatinine }\SpecialCharTok{\textless{}}\FloatTok{2.0}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"1.5{-}2.0"}
+\NormalTok{temp\_sc[d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_creatinine }\SpecialCharTok{\textgreater{}=}\FloatTok{2.0}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_creatinine }\SpecialCharTok{\textless{}}\FloatTok{2.5}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"2.0{-}2.5"}
+\NormalTok{temp\_sc[d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_creatinine }\SpecialCharTok{\textgreater{}=}\FloatTok{2.5}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_creatinine }\SpecialCharTok{\textless{}}\FloatTok{3.0}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"2.5{-}3.0"}
+\NormalTok{temp\_sc[d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_creatinine }\SpecialCharTok{\textgreater{}=}\FloatTok{3.0}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_creatinine }\SpecialCharTok{\textless{}}\FloatTok{3.5}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"3.0{-}3.5"}
+\NormalTok{temp\_sc[d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_creatinine }\SpecialCharTok{\textgreater{}=}\FloatTok{3.5}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_creatinine }\SpecialCharTok{\textless{}}\FloatTok{4.0}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"3.5{-}4.0"}
+\NormalTok{temp\_sc[d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_creatinine }\SpecialCharTok{\textgreater{}=}\FloatTok{4.0}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"4.0\textgreater{}"}
+\NormalTok{d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_creatinine }\OtherTok{\textless{}{-}} \FunctionTok{ordered}\NormalTok{(temp\_sc, }\AttributeTok{levels=}\FunctionTok{c}\NormalTok{(}\StringTok{"\textless{}1.0"}\NormalTok{,}\StringTok{"1.0{-}1.5"}\NormalTok{,}\StringTok{"1.5{-}2.0"}\NormalTok{,}
+                                                    \StringTok{"2.0{-}2.5"}\NormalTok{,}\StringTok{"2.5{-}3.0"}\NormalTok{,}\StringTok{"3.0{-}3.5"}\NormalTok{,}\StringTok{"3.5{-}4.0"}\NormalTok{,}\StringTok{"4.0\textgreater{}"}\NormalTok{))}
+
+\NormalTok{temp\_ss }\OtherTok{\textless{}{-}} \FunctionTok{rep}\NormalTok{(}\StringTok{"\textless{}149"}\NormalTok{, }\FunctionTok{nrow}\NormalTok{(d1\_proc)) }\CommentTok{\#148 is max serum\_sodium}
+\NormalTok{temp\_ss[d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_sodium }\SpecialCharTok{\textgreater{}=}\DecValTok{0}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_sodium }\SpecialCharTok{\textless{}}\DecValTok{125}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"\textless{}125"}
+\NormalTok{temp\_ss[d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_sodium }\SpecialCharTok{\textgreater{}=}\DecValTok{125}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_sodium }\SpecialCharTok{\textless{}}\DecValTok{130}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"125{-}130"}
+\NormalTok{temp\_ss[d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_sodium }\SpecialCharTok{\textgreater{}=}\DecValTok{130}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_sodium }\SpecialCharTok{\textless{}}\DecValTok{135}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"130{-}135"}
+\NormalTok{temp\_ss[d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_sodium }\SpecialCharTok{\textgreater{}=}\DecValTok{135}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_sodium }\SpecialCharTok{\textless{}}\DecValTok{140}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"135{-}140"}
+\NormalTok{temp\_ss[d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_sodium }\SpecialCharTok{\textgreater{}=}\DecValTok{140}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_sodium }\SpecialCharTok{\textless{}}\DecValTok{145}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"140{-}145"}
+\NormalTok{temp\_ss[d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_sodium }\SpecialCharTok{\textgreater{}=}\DecValTok{145}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"145\textgreater{}"}
+\NormalTok{d1\_proc}\SpecialCharTok{$}\NormalTok{srm\_sodium }\OtherTok{\textless{}{-}} \FunctionTok{ordered}\NormalTok{(temp\_ss, }\AttributeTok{levels=}\FunctionTok{c}\NormalTok{(}\StringTok{"\textless{}125"}\NormalTok{,}\StringTok{"125{-}130"}\NormalTok{, }\StringTok{"130{-}135"}\NormalTok{, }
+                                                \StringTok{"135{-}140"}\NormalTok{,}\StringTok{"140{-}145"}\NormalTok{,}\StringTok{"145\textgreater{}"}\NormalTok{))}
+
+\NormalTok{temp\_time }\OtherTok{\textless{}{-}} \FunctionTok{rep}\NormalTok{(}\StringTok{"\textless{}286"}\NormalTok{, }\FunctionTok{nrow}\NormalTok{(d1\_proc)) }\CommentTok{\#285 is max time}
+\NormalTok{temp\_time[d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textgreater{}=}\DecValTok{0}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textless{}}\DecValTok{30}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"\textless{}30"}
+\NormalTok{temp\_time[d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textgreater{}=}\DecValTok{30}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textless{}}\DecValTok{60}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"30{-}60"}
+\NormalTok{temp\_time[d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textgreater{}=}\DecValTok{60}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textless{}}\DecValTok{90}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"60{-}90"}
+\NormalTok{temp\_time[d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textgreater{}=}\DecValTok{90}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textless{}}\DecValTok{120}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"90{-}120"}
+\NormalTok{temp\_time[d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textgreater{}=}\DecValTok{120}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textless{}}\DecValTok{150}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"120{-}150"}
+\NormalTok{temp\_time[d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textgreater{}=}\DecValTok{150}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textless{}}\DecValTok{180}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"150{-}180"}
+\NormalTok{temp\_time[d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textgreater{}=}\DecValTok{180}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textless{}}\DecValTok{210}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"180{-}210"}
+\NormalTok{temp\_time[d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textgreater{}=}\DecValTok{210}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textless{}}\DecValTok{240}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"210{-}240"}
+\NormalTok{temp\_time[d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textgreater{}=}\DecValTok{240}  \SpecialCharTok{\&}\NormalTok{ d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textless{}}\DecValTok{270}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"240{-}270"}
+\NormalTok{temp\_time[d1\_proc}\SpecialCharTok{$}\NormalTok{time }\SpecialCharTok{\textgreater{}=}\DecValTok{270}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"270\textgreater{}"}
+\NormalTok{d1\_proc}\SpecialCharTok{$}\NormalTok{time }\OtherTok{\textless{}{-}} \FunctionTok{ordered}\NormalTok{(temp\_time,  }\AttributeTok{levels=}\FunctionTok{c}\NormalTok{(}\StringTok{"\textless{}30"}\NormalTok{,}\StringTok{"30{-}60"}\NormalTok{,}\StringTok{"60{-}90"}\NormalTok{,}\StringTok{"90{-}120"}\NormalTok{,}
+                                             \StringTok{"120{-}150"}\NormalTok{,}\StringTok{"150{-}180"}\NormalTok{,}\StringTok{"180{-}210"}\NormalTok{,}
+                                             \StringTok{"210{-}240"}\NormalTok{,}\StringTok{"240{-}270"}\NormalTok{,}\StringTok{"270\textgreater{}"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\normalsize
+\newpage
+
+\hypertarget{define-model-version-1}{%
+\subsection{Define model version 1}\label{define-model-version-1}}
+
+\tiny
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{g1 }\OtherTok{\textless{}{-}} \FunctionTok{graphLayout}\NormalTok{(}\FunctionTok{dagitty}\NormalTok{(}\StringTok{\textquotesingle{}dag \{}
+\StringTok{bb="0,0,1,1"}
+\StringTok{age [pos="0.213,0.767"]}
+\StringTok{anaemia [pos="0.913,0.191"]}
+\StringTok{cpk [pos="0.814,0.701"]}
+\StringTok{diabetes [pos="0.387,0.127"]}
+\StringTok{ejection\_fraction [pos="0.526,0.237"]}
+\StringTok{DEATH\_EVENT [pos="0.504,0.491"]}
+\StringTok{high\_blood\_pressure [pos="0.661,0.123"]}
+\StringTok{platelets [pos="0.761,0.379"]}
+\StringTok{sex [pos="0.385,0.926"]}
+\StringTok{smoking [pos="0.523,0.027"]}
+\StringTok{srm\_creatinine [pos="0.677,0.933"]}
+\StringTok{srm\_sodium [pos="0.128,0.495"]}
+\StringTok{time [pos="0.196,0.265"]}
+\StringTok{age {-}\textgreater{} DEATH\_EVENT}
+\StringTok{anaemia {-}\textgreater{} platelets}
+\StringTok{cpk {-}\textgreater{} DEATH\_EVENT}
+\StringTok{diabetes {-}\textgreater{} ejection\_fraction}
+\StringTok{ejection\_fraction {-}\textgreater{} DEATH\_EVENT}
+\StringTok{DEATH\_EVENT {-}\textgreater{} srm\_sodium}
+\StringTok{DEATH\_EVENT {-}\textgreater{} time}
+\StringTok{high\_blood\_pressure {-}\textgreater{} ejection\_fraction}
+\StringTok{platelets {-}\textgreater{} DEATH\_EVENT}
+\StringTok{sex {-}\textgreater{} DEATH\_EVENT}
+\StringTok{smoking {-}\textgreater{} high\_blood\_pressure}
+\StringTok{srm\_creatinine {-}\textgreater{} DEATH\_EVENT}
+\StringTok{\}}
+\StringTok{\textquotesingle{}}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\normalsize
+
+\hypertarget{plot-first-model}{%
+\subsubsection{Plot first model}\label{plot-first-model}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{plot}\NormalTok{(g1)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics[width=1\linewidth,height=0.7\textheight]{BN_21_22_Assignment1_Evander_files/figure-latex/unnamed-chunk-12-1} \end{center}
+\newpage
+
+\hypertarget{test-independent-relationship-of-the-first-model-using-chi-squared-test.}{%
+\subsubsection{Test independent relationship of the first model using
+chi-squared
+test.}\label{test-independent-relationship-of-the-first-model-using-chi-squared-test.}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{chi\_square\_test }\OtherTok{\textless{}{-}} \FunctionTok{localTests}\NormalTok{(g1, d1\_proc, }\AttributeTok{type =} \StringTok{\textquotesingle{}cis.chisq\textquotesingle{}}\NormalTok{)}
+\NormalTok{top\_rmsea }\OtherTok{\textless{}{-}}\NormalTok{ chi\_square\_test[}\FunctionTok{order}\NormalTok{(chi\_square\_test}\SpecialCharTok{$}\NormalTok{p.value, }\AttributeTok{decreasing =} \ConstantTok{FALSE}\NormalTok{),]}
+\NormalTok{knitr}\SpecialCharTok{::}\FunctionTok{kable}\NormalTok{(top\_rmsea[}\DecValTok{1}\SpecialCharTok{:}\DecValTok{10}\NormalTok{,}\DecValTok{1}\SpecialCharTok{:}\DecValTok{4}\NormalTok{])}\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{kable\_styling}\NormalTok{(}\AttributeTok{bootstrap\_options =} \FunctionTok{c}\NormalTok{(}\StringTok{"striped"}\NormalTok{, }\StringTok{"hover"}\NormalTok{, }\StringTok{"condensed"}\NormalTok{),}\AttributeTok{latex\_options =} \StringTok{"HOLD\_position"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{l|r|r|r|r}
+\hline
+  & rmsea & x2 & df & p.value\\
+\hline
+sex.\_..\_.smkn & 0.4428667 & 59.447006 & 1 & 0.0000000\\
+\hline
+cpk.\_..\_.srm\_...DEAT & 0.0517796 & 192.718992 & 90 & 0.0000000\\
+\hline
+cpk.\_..\_.time...DEAT & 0.0662021 & 248.381072 & 154 & 0.0000022\\
+\hline
+srm\_c.\_..\_.srm\_s...DEAT & 0.0687494 & 126.431244 & 70 & 0.0000421\\
+\hline
+age.\_..\_.srm\_ & 0.0539983 & 65.412019 & 35 & 0.0013729\\
+\hline
+anam.\_..\_.cpk & 0.0759400 & 27.185334 & 10 & 0.0024341\\
+\hline
+dbts.\_..\_.sex & 0.1469911 & 7.438700 & 1 & 0.0063836\\
+\hline
+dbts.\_..\_.smkn & 0.1355618 & 6.476344 & 1 & 0.0109320\\
+\hline
+age.\_..\_.hg\_\_ & 0.0759849 & 13.602814 & 5 & 0.0183393\\
+\hline
+hg\_\_.\_..\_.time...ejc\_ & 0.1295641 & 66.950393 & 45 & 0.0184953\\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{itemize}
+\tightlist
+\item
+  Sex and smoking are very dependent, research on this checks out; Men
+  smoke way more than women.
+\item
+  diabetes and sex are dependent
+\item
+  diabetes and smoking are dependent
+\end{itemize}
+
+P\_values not significant but somewhat high rmsea: - Death is not
+independent from smoking given ejection fraction. - Anaemia is not
+independent from serum\_.. given platelets - Death is not independent
+from anaemia given platelets - Death is not independent from high blood
+pressure given ejection fraction etc.
+
+\newpage
+
+\hypertarget{test-conditional-independencies-using-polychoric-correlation-matrix}{%
+\subsubsection{Test conditional independencies using polychoric
+correlation
+matrix}\label{test-conditional-independencies-using-polychoric-correlation-matrix}}
+
+This test serves as an extra method to compare with the chi-squared test
+results.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Compute polychoric correlation}
+\NormalTok{d1\_proc\_corr }\OtherTok{=} \FunctionTok{lavCor}\NormalTok{(d1\_proc)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{perform-correlation-tests}{%
+\subsubsection{Perform correlation
+tests}\label{perform-correlation-tests}}
+
+\hypertarget{highest-coef-estimates-table}{%
+\paragraph{Highest coef estimates
+table}\label{highest-coef-estimates-table}}
+
+Computes and plots the table ordered by estimate coefs, with the highest
+value first.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{corrtest }\OtherTok{\textless{}{-}} \FunctionTok{localTests}\NormalTok{(g1, }\AttributeTok{sample.cov =}\NormalTok{ d1\_proc\_corr, }\AttributeTok{sample.nobs=}\FunctionTok{nrow}\NormalTok{(d1\_proc))}
+\NormalTok{top\_corr }\OtherTok{\textless{}{-}}\NormalTok{ corrtest[}\FunctionTok{order}\NormalTok{(corrtest}\SpecialCharTok{$}\NormalTok{estimate,}\AttributeTok{decreasing =} \ConstantTok{TRUE}\NormalTok{),]}
+\NormalTok{knitr}\SpecialCharTok{::}\FunctionTok{kable}\NormalTok{(top\_corr[}\DecValTok{1}\SpecialCharTok{:}\DecValTok{6}\NormalTok{,}\DecValTok{1}\SpecialCharTok{:}\DecValTok{4}\NormalTok{])}\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{kable\_styling}\NormalTok{(}\AttributeTok{bootstrap\_options =} \FunctionTok{c}\NormalTok{(}\StringTok{"striped"}\NormalTok{, }\StringTok{"hover"}\NormalTok{, }\StringTok{"condensed"}\NormalTok{),}\AttributeTok{latex\_options =} \StringTok{"HOLD\_position"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{l|r|r|r|r}
+\hline
+  & estimate & p.value & 2.5\% & 97.5\%\\
+\hline
+sex.\_..\_.smkn & 0.4458917 & 0.0000000 & 0.3505396 & 0.5356125\\
+\hline
+age.\_..\_.srm\_ & 0.2663449 & 0.0000027 & 0.1576849 & 0.3691157\\
+\hline
+cpk.\_..\_.time...DEAT & 0.1853698 & 0.0012771 & 0.0732929 & 0.2929712\\
+\hline
+ejc\_.\_..\_.srm\_...DEAT & 0.1564557 & 0.0067391 & 0.0436102 & 0.2654492\\
+\hline
+age.\_..\_.hg\_\_ & 0.0962893 & 0.0965585 & -0.0173303 & 0.2074798\\
+\hline
+DEAT.\_..\_.hg\_\_...ejc\_ & 0.0908136 & 0.1177979 & -0.0230450 & 0.2023694\\
+\hline
+\end{tabular}
+\end{table}
+
+\hypertarget{lowest-coef-estimates-table}{%
+\paragraph{Lowest coef estimates
+table}\label{lowest-coef-estimates-table}}
+
+Computes and plots the table ordered by estimate coefs, with the lowest
+value first.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{down\_corr }\OtherTok{\textless{}{-}}\NormalTok{ corrtest[}\FunctionTok{order}\NormalTok{(corrtest}\SpecialCharTok{$}\NormalTok{estimate,}\AttributeTok{decreasing =} \ConstantTok{FALSE}\NormalTok{),]}
+\NormalTok{knitr}\SpecialCharTok{::}\FunctionTok{kable}\NormalTok{(down\_corr[}\DecValTok{1}\SpecialCharTok{:}\DecValTok{6}\NormalTok{,}\DecValTok{1}\SpecialCharTok{:}\DecValTok{4}\NormalTok{])}\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{kable\_styling}\NormalTok{(}\AttributeTok{bootstrap\_options =} \FunctionTok{c}\NormalTok{(}\StringTok{"striped"}\NormalTok{, }\StringTok{"hover"}\NormalTok{, }\StringTok{"condensed"}\NormalTok{),}\AttributeTok{latex\_options =} \StringTok{"HOLD\_position"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{l|r|r|r|r}
+\hline
+  & estimate & p.value & 2.5\% & 97.5\%\\
+\hline
+anam.\_..\_.cpk & -0.2418198 & 0.0000219 & -0.3461102 & -0.1320132\\
+\hline
+srm\_c.\_..\_.srm\_s...DEAT & -0.2272203 & 0.0000713 & -0.3325441 & -0.1166115\\
+\hline
+hg\_\_.\_..\_.time...ejc\_ & -0.2102628 & 0.0002463 & -0.3165454 & -0.0990080\\
+\hline
+hg\_\_.\_..\_.time...DEAT & -0.1971350 & 0.0006018 & -0.3041265 & -0.0854280\\
+\hline
+ejc\_.\_..\_.srm\_ & -0.1865432 & 0.0011645 & -0.2939081 & -0.0746935\\
+\hline
+dbts.\_..\_.sex & -0.1577295 & 0.0062091 & -0.2664854 & -0.0451062\\
+\hline
+\end{tabular}
+\end{table}
+
+Positive correlations - Similar to the chi-squared test, sex and smoking
+are strongly correlated. - Creatine phosphokinase shows correlation with
+time and death\_event. - Age and serum creatine also show significant
+correlations.
+
+Negative correlations - Many given time, are negatively correlated -
+Anaemia and creatine-pk show negative correlation - Age and creatine-cpk
+- diabetes and sex \newpage
+
+\hypertarget{define-intermediate-model-with-sex-based-changes.}{%
+\subsection{Define intermediate model with sex based
+changes.}\label{define-intermediate-model-with-sex-based-changes.}}
+
+Create dependencies in network for the implied gender relationships.
+
+\tiny
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{g2 }\OtherTok{\textless{}{-}} \FunctionTok{graphLayout}\NormalTok{(}\FunctionTok{dagitty}\NormalTok{(}\StringTok{\textquotesingle{}dag \{}
+\StringTok{bb="0,0,1,1"}
+\StringTok{age [pos="0.213,0.767"]}
+\StringTok{anaemia [pos="0.913,0.191"]}
+\StringTok{cpk [pos="0.814,0.701"]}
+\StringTok{diabetes [pos="0.387,0.127"]}
+\StringTok{ejection\_fraction [pos="0.526,0.237"]}
+\StringTok{DEATH\_EVENT [pos="0.504,0.491"]}
+\StringTok{high\_blood\_pressure [pos="0.661,0.123"]}
+\StringTok{platelets [pos="0.761,0.379"]}
+\StringTok{sex [pos="0.385,0.926"]}
+\StringTok{smoking [pos="0.523,0.027"]}
+\StringTok{srm\_creatinine [pos="0.677,0.933"]}
+\StringTok{srm\_sodium [pos="0.128,0.495"]}
+\StringTok{time [pos="0.196,0.265"]}
+\StringTok{age {-}\textgreater{} DEATH\_EVENT}
+\StringTok{age {-}\textgreater{} cpk}
+\StringTok{cpk {-}\textgreater{} DEATH\_EVENT}
+\StringTok{diabetes {-}\textgreater{} ejection\_fraction}
+\StringTok{ejection\_fraction {-}\textgreater{} DEATH\_EVENT}
+\StringTok{DEATH\_EVENT {-}\textgreater{} srm\_sodium}
+\StringTok{DEATH\_EVENT {-}\textgreater{} time}
+\StringTok{high\_blood\_pressure {-}\textgreater{} ejection\_fraction}
+\StringTok{anaemia {-}\textgreater{} platelets}
+\StringTok{platelets {-}\textgreater{} DEATH\_EVENT}
+\StringTok{sex {-}\textgreater{} DEATH\_EVENT}
+\StringTok{smoking {-}\textgreater{} high\_blood\_pressure}
+\StringTok{srm\_creatinine {-}\textgreater{} DEATH\_EVENT}
+\StringTok{sex {-}\textgreater{} smoking}
+\StringTok{sex {-}\textgreater{} diabetes}
+\StringTok{\}}
+\StringTok{\textquotesingle{}}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\normalsize
+
+\hypertarget{plot-intermediate-model}{%
+\subsubsection{Plot intermediate model}\label{plot-intermediate-model}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{plot}\NormalTok{(g2)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics[width=1\linewidth,height=0.7\textheight]{BN_21_22_Assignment1_Evander_files/figure-latex/unnamed-chunk-18-1} \end{center}
+\newpage
+
+\hypertarget{test-independent-relationship-of-the-intermediate-model-using-chi-squared-test.}{%
+\subsubsection{Test independent relationship of the intermediate model
+using chi-squared
+test.}\label{test-independent-relationship-of-the-intermediate-model-using-chi-squared-test.}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{chi\_square\_test }\OtherTok{\textless{}{-}} \FunctionTok{localTests}\NormalTok{(g2, d1\_proc, }\AttributeTok{type =} \StringTok{\textquotesingle{}cis.chisq\textquotesingle{}}\NormalTok{)}
+\FunctionTok{plotLocalTestResults}\NormalTok{(chi\_square\_test)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{BN_21_22_Assignment1_Evander_files/figure-latex/unnamed-chunk-19-1} \end{center}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{top\_rmsea }\OtherTok{\textless{}{-}}\NormalTok{ chi\_square\_test[}\FunctionTok{order}\NormalTok{(chi\_square\_test}\SpecialCharTok{$}\NormalTok{p.value, }\AttributeTok{decreasing =} \ConstantTok{FALSE}\NormalTok{),]}
+\NormalTok{knitr}\SpecialCharTok{::}\FunctionTok{kable}\NormalTok{(top\_rmsea[}\DecValTok{1}\SpecialCharTok{:}\DecValTok{10}\NormalTok{,}\DecValTok{1}\SpecialCharTok{:}\DecValTok{4}\NormalTok{])}\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{kable\_styling}\NormalTok{(}\AttributeTok{bootstrap\_options =} \FunctionTok{c}\NormalTok{(}\StringTok{"striped"}\NormalTok{, }\StringTok{"hover"}\NormalTok{, }\StringTok{"condensed"}\NormalTok{),}\AttributeTok{latex\_options =} \StringTok{"HOLD\_position"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{l|r|r|r|r}
+\hline
+  & rmsea & x2 & df & p.value\\
+\hline
+cpk.\_..\_.srm\_...DEAT & 0.0517796 & 192.71899 & 90 & 0.0000000\\
+\hline
+cpk.\_..\_.time...DEAT & 0.0662021 & 248.38107 & 154 & 0.0000022\\
+\hline
+srm\_c.\_..\_.srm\_s...DEAT & 0.0687494 & 126.43124 & 70 & 0.0000421\\
+\hline
+age.\_..\_.srm\_ & 0.0539983 & 65.41202 & 35 & 0.0013729\\
+\hline
+DEAT.\_..\_.hg\_\_...dbts..ejc\_..smkn & 0.2568963 & 36.42911 & 15 & 0.0015324\\
+\hline
+anam.\_..\_.cpk & 0.0759400 & 27.18533 & 10 & 0.0024341\\
+\hline
+DEAT.\_..\_.smkn...ejc\_..sex & 0.2891601 & 20.93410 & 8 & 0.0073246\\
+\hline
+age.\_..\_.hg\_\_ & 0.0759849 & 13.60281 & 5 & 0.0183393\\
+\hline
+hg\_\_.\_..\_.time...dbts..ejc\_..smkn & 0.2368054 & 127.40332 & 99 & 0.0287913\\
+\hline
+ejc\_.\_..\_.sex...dbts..hg\_\_ & 0.0715987 & 29.75973 & 19 & 0.0549370\\
+\hline
+\end{tabular}
+\end{table}
+
+Results of the test suggest a significant dependence relationship
+between high blood pressure and death. \newpage
+
+\hypertarget{define-final-model}{%
+\subsection{Define final model}\label{define-final-model}}
+
+\tiny
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{g3 }\OtherTok{\textless{}{-}} \FunctionTok{graphLayout}\NormalTok{(}\FunctionTok{dagitty}\NormalTok{(}\StringTok{\textquotesingle{}dag \{}
+\StringTok{bb="0,0,1,1"}
+\StringTok{age [pos="0.213,0.767"]}
+\StringTok{anaemia [pos="0.913,0.191"]}
+\StringTok{cpk [pos="0.814,0.701"]}
+\StringTok{diabetes [pos="0.387,0.127"]}
+\StringTok{ejection\_fraction [pos="0.526,0.237"]}
+\StringTok{DEATH\_EVENT [pos="0.504,0.491"]}
+\StringTok{high\_blood\_pressure [pos="0.661,0.123"]}
+\StringTok{platelets [pos="0.761,0.379"]}
+\StringTok{sex [pos="0.385,0.926"]}
+\StringTok{smoking [pos="0.523,0.027"]}
+\StringTok{srm\_creatinine [pos="0.677,0.933"]}
+\StringTok{srm\_sodium [pos="0.128,0.495"]}
+\StringTok{time [pos="0.196,0.265"]}
+\StringTok{age {-}\textgreater{} DEATH\_EVENT}
+\StringTok{age {-}\textgreater{} cpk}
+\StringTok{cpk {-}\textgreater{} DEATH\_EVENT}
+\StringTok{diabetes {-}\textgreater{} ejection\_fraction}
+\StringTok{ejection\_fraction {-}\textgreater{} DEATH\_EVENT}
+\StringTok{DEATH\_EVENT {-}\textgreater{} srm\_sodium}
+\StringTok{DEATH\_EVENT {-}\textgreater{} time}
+\StringTok{high\_blood\_pressure {-}\textgreater{} ejection\_fraction}
+\StringTok{anaemia {-}\textgreater{} platelets}
+\StringTok{platelets {-}\textgreater{} DEATH\_EVENT}
+\StringTok{sex {-}\textgreater{} DEATH\_EVENT}
+\StringTok{smoking {-}\textgreater{} high\_blood\_pressure}
+\StringTok{srm\_creatinine {-}\textgreater{} DEATH\_EVENT}
+\StringTok{sex {-}\textgreater{} smoking}
+\StringTok{sex {-}\textgreater{} diabetes}
+\StringTok{high\_blood\_pressure {-}\textgreater{} DEATH\_EVENT}
+\StringTok{\}}
+\StringTok{\textquotesingle{}}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\normalsize
+
+\hypertarget{plot-final-model}{%
+\subsubsection{Plot final model}\label{plot-final-model}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{plot}\NormalTok{(g3)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics[width=1\linewidth,height=0.7\textheight]{BN_21_22_Assignment1_Evander_files/figure-latex/unnamed-chunk-21-1} \end{center}
+
+\newpage
+
+\hypertarget{test-independent-relationship-of-the-final-model-using-chi-squared-test.}{%
+\subsubsection{Test independent relationship of the final model using
+chi-squared
+test.}\label{test-independent-relationship-of-the-final-model-using-chi-squared-test.}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{chi\_square\_test }\OtherTok{\textless{}{-}} \FunctionTok{localTests}\NormalTok{(g3, d1\_proc, }\AttributeTok{type =} \StringTok{\textquotesingle{}cis.chisq\textquotesingle{}}\NormalTok{)}
+\FunctionTok{plotLocalTestResults}\NormalTok{(chi\_square\_test)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{BN_21_22_Assignment1_Evander_files/figure-latex/unnamed-chunk-22-1} \end{center}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{top\_rmsea }\OtherTok{\textless{}{-}}\NormalTok{ chi\_square\_test[}\FunctionTok{order}\NormalTok{(chi\_square\_test}\SpecialCharTok{$}\NormalTok{p.value, }\AttributeTok{decreasing =} \ConstantTok{FALSE}\NormalTok{),]}
+\NormalTok{knitr}\SpecialCharTok{::}\FunctionTok{kable}\NormalTok{(top\_rmsea[}\DecValTok{1}\SpecialCharTok{:}\DecValTok{10}\NormalTok{,}\DecValTok{1}\SpecialCharTok{:}\DecValTok{4}\NormalTok{])}\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{kable\_styling}\NormalTok{(}\AttributeTok{bootstrap\_options =} \FunctionTok{c}\NormalTok{(}\StringTok{"striped"}\NormalTok{, }\StringTok{"hover"}\NormalTok{, }\StringTok{"condensed"}\NormalTok{),}\AttributeTok{latex\_options =} \StringTok{"HOLD\_position"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{l|r|r|r|r}
+\hline
+  & rmsea & x2 & df & p.value\\
+\hline
+cpk.\_..\_.srm\_...DEAT & 0.0517796 & 192.718992 & 90 & 0.0000000\\
+\hline
+cpk.\_..\_.time...DEAT & 0.0662021 & 248.381072 & 154 & 0.0000022\\
+\hline
+srm\_c.\_..\_.srm\_s...DEAT & 0.0687494 & 126.431244 & 70 & 0.0000421\\
+\hline
+age.\_..\_.srm\_ & 0.0539983 & 65.412019 & 35 & 0.0013729\\
+\hline
+anam.\_..\_.cpk & 0.0759400 & 27.185334 & 10 & 0.0024341\\
+\hline
+age.\_..\_.hg\_\_ & 0.0759849 & 13.602814 & 5 & 0.0183393\\
+\hline
+ejc\_.\_..\_.sex...dbts..hg\_\_ & 0.0715987 & 29.759733 & 19 & 0.0549370\\
+\hline
+age.\_..\_.anam & 0.0624170 & 10.804868 & 5 & 0.0553891\\
+\hline
+anam.\_..\_.smkn & 0.0905209 & 3.441822 & 1 & 0.0635656\\
+\hline
+age.\_..\_.dbts & 0.0602549 & 10.409667 & 5 & 0.0644256\\
+\hline
+\end{tabular}
+\end{table}
+
+Little significant high RMSEA test remain using this model. Therefore,
+we will use this model to fit our SEM using the polychoric correlation
+matrix and analyse it's path coefficients.
+
+\newpage
+
+\hypertarget{fitting-sem-using-binned-catagorical-polychoric-correlation-matrix}{%
+\subsection{Fitting SEM using binned catagorical polychoric correlation
+matrix}\label{fitting-sem-using-binned-catagorical-polychoric-correlation-matrix}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Define SEM model in lavaan syntax}
+\NormalTok{sem\_model }\OtherTok{\textless{}{-}} \StringTok{"}
+\StringTok{            srm\_sodium\textasciitilde{}DEATH\_EVENT}
+\StringTok{            time\textasciitilde{}DEATH\_EVENT}
+\StringTok{            DEATH\_EVENT\textasciitilde{}age}
+\StringTok{            cpk\textasciitilde{}age}
+\StringTok{            platelets\textasciitilde{}anaemia}
+\StringTok{            DEATH\_EVENT\textasciitilde{}cpk}
+\StringTok{            ejection\_fraction\textasciitilde{}diabetes}
+\StringTok{            DEATH\_EVENT\textasciitilde{}ejection\_fraction}
+\StringTok{            DEATH\_EVENT\textasciitilde{}high\_blood\_pressure}
+\StringTok{            ejection\_fraction\textasciitilde{}high\_blood\_pressure}
+\StringTok{            DEATH\_EVENT\textasciitilde{}platelets}
+\StringTok{            DEATH\_EVENT\textasciitilde{}sex}
+\StringTok{            diabetes\textasciitilde{}sex}
+\StringTok{            smoking\textasciitilde{}sex}
+\StringTok{            high\_blood\_pressure\textasciitilde{}smoking}
+\StringTok{            DEATH\_EVENT\textasciitilde{}srm\_creatinine}
+\StringTok{           "}
+
+\CommentTok{\# Fit SEM}
+\NormalTok{fit }\OtherTok{\textless{}{-}} \FunctionTok{sem}\NormalTok{(sem\_model, }\AttributeTok{sample.cov =}\NormalTok{ d1\_proc\_corr, }\AttributeTok{sample.nobs =} \FunctionTok{nrow}\NormalTok{(d1\_proc), }\AttributeTok{fixed.x =} \ConstantTok{FALSE}\NormalTok{)}
+
+\CommentTok{\# Plot SEM network without exogenous covariances, minimum coef values of 0.1 and no residuals.}
+\FunctionTok{semPaths}\NormalTok{(fit, }\AttributeTok{what=}\StringTok{"est"}\NormalTok{, }\AttributeTok{whatLabels =} \StringTok{"par"}\NormalTok{, }\AttributeTok{style =} \StringTok{"OpenMx"}\NormalTok{, }\AttributeTok{layout =} \StringTok{"tree2"}\NormalTok{,}
+         \AttributeTok{residuals =} \ConstantTok{FALSE}\NormalTok{, }\AttributeTok{nCharNodes=}\DecValTok{0}\NormalTok{, }\AttributeTok{edge.label.cex =} \FloatTok{1.5}\NormalTok{, }\AttributeTok{asize =} \DecValTok{6}\NormalTok{,}
+         \AttributeTok{sizeMan =} \DecValTok{12}\NormalTok{,}\AttributeTok{sizeMan2 =} \DecValTok{5}\NormalTok{,}\AttributeTok{minimum =} \FloatTok{0.1}\NormalTok{,}\AttributeTok{curvature =} \FloatTok{1.5}\NormalTok{,}
+         \AttributeTok{rotation=}\DecValTok{1}\NormalTok{,}\AttributeTok{curve=}\DecValTok{2}\NormalTok{, }\AttributeTok{exoCov=}\ConstantTok{FALSE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics[width=0.7\linewidth]{BN_21_22_Assignment1_Evander_files/figure-latex/unnamed-chunk-23-1} \end{center}
+
+\end{document}

@@ -1,0 +1,487 @@
+
+---
+title: "Bayesian Networks and Causal Inference Assignment 1 Code Notebook"
+date: October 2021
+author: 
+- Evander van Wolfswinkel^[s1057895]
+- Janneke Verbeek^[s1011065]
+- Niek Derksen^[s4363779]
+output:
+  pdf_document:
+    keep_tex:  true
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, results = 'asis',fig.width=12, fig.height=8, fig.align = "center")
+```
+
+```{r,echo=FALSE,results='hide',message=FALSE, warning=FALSE, include=FALSE}
+# Set CRAN repo
+r = getOption("repos")
+r["CRAN"] = "http://cran.us.r-project.org"
+options(repos = r)
+
+if(!require(c("remotes","pROC","naivebayes","ranger","funModeling","tidyverse","Hmisc", "bnlearn", "naivebayes", "dagitty", "dataPreparation", "lavaan", "summarytools", "OneR","corrplot","semPlot", "knitr","readxl","dplyr","kableExtra"))) install.packages(c("remotes","pROC","naivebayes","ranger","funModeling","tidyverse","Hmisc", "bnlearn", "naivebayes", "dagitty", "dataPreparation", "lavaan", "summarytools", "OneR","corrplot","semPlot","knitr","readxl","dplyr","kableExtra"), dependencies = TRUE)
+
+if(!require(bayesianNetworks)) remotes::install_github("jtextor/bayesianNetworks")
+
+```
+\small
+### Import packages
+```{r, results='hide',message=FALSE} 
+library(semPlot)
+library(bayesianNetworks)
+library(funModeling) 
+library(tidyverse) 
+library(Hmisc)
+library(bnlearn)
+library(naivebayes)
+library(dagitty)
+library(dataPreparation)
+library(lavaan)
+library(summarytools)
+library(OneR)
+library(corrplot)
+library(knitr)
+library(readxl)
+library(dplyr)
+library(kableExtra)
+```
+\normalsize
+\newpage
+
+## Import dataset
+
+Assuming the "heart_failure_clinical_records_dataset.csv"-file from [this](https://www.kaggle.com/andrewmvd/heart-failure-clinical-data/download) Kaggle page is present in the current working directory.
+
+
+```{r }
+d1=read.table("./heart_failure_clinical_records_dataset.csv", sep=',', header=TRUE)
+```
+
+## Exploration
+
+```{r}
+dfSummary(d1, plain.ascii  = FALSE,
+          style        = 'grid',
+          graph.magnif = 0.85,
+          varnumbers = FALSE,
+          valid.col    = FALSE, tmp.img.dir = "/tmp")
+```
+
+All data is complete. Lets check data type:
+
+```{r}
+describe(d1)  %>% html()
+```
+
+```{r,,out.width="100%",out.height="40%", warning=FALSE}
+plot_num(d1)
+```
+\newpage
+
+## Preprocessing 
+
+Shorten some long variable names.
+```{r }
+d1 <- rename(d1, cpk = creatinine_phosphokinase)
+d1 <- rename(d1, srm_creatinine = serum_creatinine)
+d1 <- rename(d1, srm_sodium = serum_sodium)
+```
+
+Create extra dataset to perform processing on.
+```{r }
+d1_proc = data.frame(d1)
+```
+
+#### Continuous and binary data
+
+Order binary variables
+
+```{r}
+
+d1_proc$anaemia <- as.numeric(ordered(d1$anaemia))
+d1_proc$sex <- as.numeric(ordered(d1$sex))
+d1_proc$high_blood_pressure <- as.numeric(ordered(d1$high_blood_pressure))
+d1_proc$diabetes <- as.numeric(ordered(d1$diabetes))
+d1_proc$smoking <- as.numeric(ordered(d1$smoking))
+d1_proc$DEATH_EVENT <- as.numeric(ordered(d1$DEATH_EVENT))
+
+```
+
+#### Bin all continuous
+
+Bin continuous variables using the histograms of the data to create regularly spaces bins
+
+\scriptsize 
+
+```{r}
+temp_age <- rep("<97", nrow(d1_proc)) #96 is max age
+temp_age[d1_proc$age >=0 & d1_proc$age <50] <- "<50"
+temp_age[d1_proc$age >=50 & d1_proc$age <60] <- "50-60"
+temp_age[d1_proc$age >=60 & d1_proc$age <70] <- "60-70"
+temp_age[d1_proc$age >=70 & d1_proc$age <80] <- "70-80"
+temp_age[d1_proc$age >=80 & d1_proc$age<90] <- "80-90"
+temp_age[d1_proc$age >=90] <- "90>"
+#turn binned data into factor:
+d1_proc$age <- ordered(temp_age, levels=c("<50","50-60","60-70","70-80","80-90",
+                                          "90>"))
+
+temp_cpk <- rep("<7862", nrow(d1_proc)) #96 is max cpk
+temp_cpk[d1_proc$cpk >=0 & d1_proc$cpk <200] <- "0-200"
+temp_cpk[d1_proc$cpk >=200 & d1_proc$cpk <400] <- "200-400"
+temp_cpk[d1_proc$cpk >=400 & d1_proc$cpk <600] <- "400-600"
+temp_cpk[d1_proc$cpk >=600 & d1_proc$cpk <800] <- "600-800"
+temp_cpk[d1_proc$cpk >=800 & d1_proc$cpk <1000] <- "800-1000"
+temp_cpk[d1_proc$cpk >=1000 & d1_proc$cpk <1200] <- "1000-1200"
+temp_cpk[d1_proc$cpk >=1200 & d1_proc$cpk <1400] <- "1200-1400"
+temp_cpk[d1_proc$cpk >=1400 & d1_proc$cpk <1600] <- "1400-1600"
+temp_cpk[d1_proc$cpk >=1600 & d1_proc$cpk <1800] <- "1600-1800"
+temp_cpk[d1_proc$cpk >=1800 & d1_proc$cpk <2000] <- "1800-2000"
+temp_cpk[d1_proc$cpk >=2000] <- "2000>"
+#turn binned data into factor:
+d1_proc$cpk <- ordered(temp_cpk, levels=c("0-200", "200-400", "400-600",
+                                          "600-800","800-1000","1000-1200",
+                                          "1200-1400","1400-1600",
+                                          "1600-1800","1800-2000",
+                                          "2000>"))
+
+temp_ef <- rep("<81", nrow(d1_proc)) #80 is max ef
+temp_ef[d1_proc$ejection_fraction >=0  & d1_proc$ejection_fraction <20] <- "<20"
+temp_ef[d1_proc$ejection_fraction >=20 & d1_proc$ejection_fraction <30] <- "20-30"
+temp_ef[d1_proc$ejection_fraction >=30 & d1_proc$ejection_fraction <40] <- "30-40"
+temp_ef[d1_proc$ejection_fraction >=40 & d1_proc$ejection_fraction <50] <- "40-50"
+temp_ef[d1_proc$ejection_fraction >=50 & d1_proc$ejection_fraction <60] <- "50-60"
+temp_ef[d1_proc$ejection_fraction >=60] <- "60>"
+#turn binned data into factor:
+d1_proc$ejection_fraction <- ordered(temp_ef, levels=c("<20","20-30","30-40",
+                                                       "40-50","50-60","60>"))
+
+temp_plt <- rep("<850k", nrow(d1_proc)) #850k is max platelets
+temp_plt[d1_proc$platelets >=0  & d1_proc$platelets <50000] <- "<50k"
+temp_plt[d1_proc$platelets >=50000  & d1_proc$platelets <100000] <- "50k-100k"
+temp_plt[d1_proc$platelets >=100000  & d1_proc$platelets <150000] <- "100k-150k"
+temp_plt[d1_proc$platelets >=150000  & d1_proc$platelets <200000] <- "150k-200k"
+temp_plt[d1_proc$platelets >=200000  & d1_proc$platelets <250000] <- "200k-250k"
+temp_plt[d1_proc$platelets >=250000  & d1_proc$platelets <300000] <- "250k-300k"
+temp_plt[d1_proc$platelets >=300000  & d1_proc$platelets <350000] <- "300k-350k"
+temp_plt[d1_proc$platelets >=350000  & d1_proc$platelets <400000] <- "350k-400k"
+temp_plt[d1_proc$platelets >=400000  & d1_proc$platelets <450000] <- "400k-450k"
+temp_plt[d1_proc$platelets >=450000  & d1_proc$platelets <500000] <- "450k-500k"
+temp_plt[d1_proc$platelets >=500000] <- "500k>"
+#turn binned data into factor
+d1_proc$platelets <- ordered(temp_plt, levels=c("<50k","50k-100k","100k-150k",
+                                                "150k-200k","200k-250k","250k-300k",
+                                                "300k-350k","350k-400k",
+                                                "400k-450k","450k-500k","500k>"))
+
+temp_sc <- rep("<9.5", nrow(d1_proc)) #850k is max platelets
+temp_sc[d1_proc$srm_creatinine >=0  & d1_proc$srm_creatinine <1.0] <- "<1.0"
+temp_sc[d1_proc$srm_creatinine >=1.0  & d1_proc$srm_creatinine <1.5] <- "1.0-1.5"
+temp_sc[d1_proc$srm_creatinine >=1.5  & d1_proc$srm_creatinine <2.0] <- "1.5-2.0"
+temp_sc[d1_proc$srm_creatinine >=2.0  & d1_proc$srm_creatinine <2.5] <- "2.0-2.5"
+temp_sc[d1_proc$srm_creatinine >=2.5  & d1_proc$srm_creatinine <3.0] <- "2.5-3.0"
+temp_sc[d1_proc$srm_creatinine >=3.0  & d1_proc$srm_creatinine <3.5] <- "3.0-3.5"
+temp_sc[d1_proc$srm_creatinine >=3.5  & d1_proc$srm_creatinine <4.0] <- "3.5-4.0"
+temp_sc[d1_proc$srm_creatinine >=4.0] <- "4.0>"
+d1_proc$srm_creatinine <- ordered(temp_sc, levels=c("<1.0","1.0-1.5","1.5-2.0",
+                                                    "2.0-2.5","2.5-3.0","3.0-3.5","3.5-4.0","4.0>"))
+
+temp_ss <- rep("<149", nrow(d1_proc)) #148 is max serum_sodium
+temp_ss[d1_proc$srm_sodium >=0  & d1_proc$srm_sodium <125] <- "<125"
+temp_ss[d1_proc$srm_sodium >=125  & d1_proc$srm_sodium <130] <- "125-130"
+temp_ss[d1_proc$srm_sodium >=130  & d1_proc$srm_sodium <135] <- "130-135"
+temp_ss[d1_proc$srm_sodium >=135  & d1_proc$srm_sodium <140] <- "135-140"
+temp_ss[d1_proc$srm_sodium >=140  & d1_proc$srm_sodium <145] <- "140-145"
+temp_ss[d1_proc$srm_sodium >=145] <- "145>"
+d1_proc$srm_sodium <- ordered(temp_ss, levels=c("<125","125-130", "130-135", 
+                                                "135-140","140-145","145>"))
+
+temp_time <- rep("<286", nrow(d1_proc)) #285 is max time
+temp_time[d1_proc$time >=0  & d1_proc$time <30] <- "<30"
+temp_time[d1_proc$time >=30  & d1_proc$time <60] <- "30-60"
+temp_time[d1_proc$time >=60  & d1_proc$time <90] <- "60-90"
+temp_time[d1_proc$time >=90  & d1_proc$time <120] <- "90-120"
+temp_time[d1_proc$time >=120  & d1_proc$time <150] <- "120-150"
+temp_time[d1_proc$time >=150  & d1_proc$time <180] <- "150-180"
+temp_time[d1_proc$time >=180  & d1_proc$time <210] <- "180-210"
+temp_time[d1_proc$time >=210  & d1_proc$time <240] <- "210-240"
+temp_time[d1_proc$time >=240  & d1_proc$time <270] <- "240-270"
+temp_time[d1_proc$time >=270] <- "270>"
+d1_proc$time <- ordered(temp_time,  levels=c("<30","30-60","60-90","90-120",
+                                             "120-150","150-180","180-210",
+                                             "210-240","240-270","270>"))
+
+
+```
+
+\normalsize
+\newpage
+
+## Define model version 1
+
+\tiny
+
+```{r }
+g1 <- graphLayout(dagitty('dag {
+bb="0,0,1,1"
+age [pos="0.213,0.767"]
+anaemia [pos="0.913,0.191"]
+cpk [pos="0.814,0.701"]
+diabetes [pos="0.387,0.127"]
+ejection_fraction [pos="0.526,0.237"]
+DEATH_EVENT [pos="0.504,0.491"]
+high_blood_pressure [pos="0.661,0.123"]
+platelets [pos="0.761,0.379"]
+sex [pos="0.385,0.926"]
+smoking [pos="0.523,0.027"]
+srm_creatinine [pos="0.677,0.933"]
+srm_sodium [pos="0.128,0.495"]
+time [pos="0.196,0.265"]
+age -> DEATH_EVENT
+anaemia -> platelets
+cpk -> DEATH_EVENT
+diabetes -> ejection_fraction
+ejection_fraction -> DEATH_EVENT
+DEATH_EVENT -> srm_sodium
+DEATH_EVENT -> time
+high_blood_pressure -> ejection_fraction
+platelets -> DEATH_EVENT
+sex -> DEATH_EVENT
+smoking -> high_blood_pressure
+srm_creatinine -> DEATH_EVENT
+}
+'))
+
+```
+
+\normalsize
+
+### Plot first model 
+```{r ,out.width="100%",out.height="70%"}
+plot(g1)
+```
+\newpage
+
+### Test independent relationship of the first model using chi-squared test.
+
+```{r}
+chi_square_test <- localTests(g1, d1_proc, type = 'cis.chisq')
+top_rmsea <- chi_square_test[order(chi_square_test$p.value, decreasing = FALSE),]
+knitr::kable(top_rmsea[1:10,1:4])%>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),latex_options = "HOLD_position")
+
+```
+
+- Sex and smoking are very dependent, research on this checks out; Men smoke way more than women. 
+- diabetes  and sex are dependent
+- diabetes and smoking are dependent
+
+
+P_values not significant but somewhat high rmsea:
+- Death is not independent from smoking given ejection fraction.
+- Anaemia is not independent from serum_.. given platelets
+- Death is not independent from anaemia given platelets
+- Death is not independent from high blood pressure given ejection fraction
+etc.
+
+\newpage
+### Test conditional independencies using polychoric correlation matrix 
+This test serves as an extra method to compare with the chi-squared test results.
+
+```{r}
+# Compute polychoric correlation
+d1_proc_corr = lavCor(d1_proc)
+```
+
+
+### Perform correlation tests
+#### Highest coef estimates table
+
+Computes and plots the table ordered by estimate coefs, with the highest value first.
+```{r }
+corrtest <- localTests(g1, sample.cov = d1_proc_corr, sample.nobs=nrow(d1_proc))
+top_corr <- corrtest[order(corrtest$estimate,decreasing = TRUE),]
+knitr::kable(top_corr[1:6,1:4])%>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),latex_options = "HOLD_position")
+```
+#### Lowest coef estimates table
+
+Computes and plots the table ordered by estimate coefs, with the lowest value first.
+```{r}
+down_corr <- corrtest[order(corrtest$estimate,decreasing = FALSE),]
+knitr::kable(down_corr[1:6,1:4])%>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),latex_options = "HOLD_position")
+```
+Positive correlations
+- Similar to the chi-squared test, sex and smoking are strongly correlated.
+- Creatine phosphokinase shows correlation with time and death_event.
+- Age and serum creatine also show significant correlations.
+
+Negative correlations
+- Many given time, are negatively correlated 
+- Anaemia and creatine-pk show negative correlation
+- Age and creatine-cpk
+- diabetes and sex
+\newpage
+
+## Define intermediate model with sex based changes.
+Create dependencies in network for the implied gender relationships.
+
+\tiny
+
+```{r}
+g2 <- graphLayout(dagitty('dag {
+bb="0,0,1,1"
+age [pos="0.213,0.767"]
+anaemia [pos="0.913,0.191"]
+cpk [pos="0.814,0.701"]
+diabetes [pos="0.387,0.127"]
+ejection_fraction [pos="0.526,0.237"]
+DEATH_EVENT [pos="0.504,0.491"]
+high_blood_pressure [pos="0.661,0.123"]
+platelets [pos="0.761,0.379"]
+sex [pos="0.385,0.926"]
+smoking [pos="0.523,0.027"]
+srm_creatinine [pos="0.677,0.933"]
+srm_sodium [pos="0.128,0.495"]
+time [pos="0.196,0.265"]
+age -> DEATH_EVENT
+age -> cpk
+cpk -> DEATH_EVENT
+diabetes -> ejection_fraction
+ejection_fraction -> DEATH_EVENT
+DEATH_EVENT -> srm_sodium
+DEATH_EVENT -> time
+high_blood_pressure -> ejection_fraction
+anaemia -> platelets
+platelets -> DEATH_EVENT
+sex -> DEATH_EVENT
+smoking -> high_blood_pressure
+srm_creatinine -> DEATH_EVENT
+sex -> smoking
+sex -> diabetes
+}
+'))
+
+```
+
+\normalsize
+
+### Plot intermediate model
+```{r, out.width="100%",out.height="70%"}
+plot(g2)
+```
+\newpage
+### Test independent relationship of the intermediate model using chi-squared test.
+```{r}
+chi_square_test <- localTests(g2, d1_proc, type = 'cis.chisq')
+plotLocalTestResults(chi_square_test)
+top_rmsea <- chi_square_test[order(chi_square_test$p.value, decreasing = FALSE),]
+knitr::kable(top_rmsea[1:10,1:4])%>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),latex_options = "HOLD_position")
+
+```
+Results of the test suggest a significant dependence relationship between high blood pressure and death.
+\newpage
+
+## Define final model 
+
+\tiny
+
+```{r, collapse=TRUE}
+g3 <- graphLayout(dagitty('dag {
+bb="0,0,1,1"
+age [pos="0.213,0.767"]
+anaemia [pos="0.913,0.191"]
+cpk [pos="0.814,0.701"]
+diabetes [pos="0.387,0.127"]
+ejection_fraction [pos="0.526,0.237"]
+DEATH_EVENT [pos="0.504,0.491"]
+high_blood_pressure [pos="0.661,0.123"]
+platelets [pos="0.761,0.379"]
+sex [pos="0.385,0.926"]
+smoking [pos="0.523,0.027"]
+srm_creatinine [pos="0.677,0.933"]
+srm_sodium [pos="0.128,0.495"]
+time [pos="0.196,0.265"]
+age -> DEATH_EVENT
+age -> cpk
+cpk -> DEATH_EVENT
+diabetes -> ejection_fraction
+ejection_fraction -> DEATH_EVENT
+DEATH_EVENT -> srm_sodium
+DEATH_EVENT -> time
+high_blood_pressure -> ejection_fraction
+anaemia -> platelets
+platelets -> DEATH_EVENT
+sex -> DEATH_EVENT
+smoking -> high_blood_pressure
+srm_creatinine -> DEATH_EVENT
+sex -> smoking
+sex -> diabetes
+high_blood_pressure -> DEATH_EVENT
+}
+'))
+
+```
+
+\normalsize
+
+### Plot final model 
+```{r, out.width="100%",out.height="70%"}
+plot(g3)
+```
+
+\newpage
+
+### Test independent relationship of the final model using chi-squared test.
+```{r}
+chi_square_test <- localTests(g3, d1_proc, type = 'cis.chisq')
+plotLocalTestResults(chi_square_test)
+top_rmsea <- chi_square_test[order(chi_square_test$p.value, decreasing = FALSE),]
+knitr::kable(top_rmsea[1:10,1:4])%>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),latex_options = "HOLD_position")
+
+```
+Little significant high RMSEA test remain using this model. Therefore, we will use this model to fit our SEM using the polychoric correlation matrix and analyse it's path coefficients.
+
+\newpage
+
+## Fitting SEM using binned catagorical polychoric correlation matrix
+
+```{r,  out.width="70%"}
+
+# Define SEM model in lavaan syntax
+sem_model <- "
+            srm_sodium~DEATH_EVENT
+            time~DEATH_EVENT
+            DEATH_EVENT~age
+            cpk~age
+            platelets~anaemia
+            DEATH_EVENT~cpk
+            ejection_fraction~diabetes
+            DEATH_EVENT~ejection_fraction
+            DEATH_EVENT~high_blood_pressure
+            ejection_fraction~high_blood_pressure
+            DEATH_EVENT~platelets
+            DEATH_EVENT~sex
+            diabetes~sex
+            smoking~sex
+            high_blood_pressure~smoking
+            DEATH_EVENT~srm_creatinine
+           "
+
+# Fit SEM
+fit <- sem(sem_model, sample.cov = d1_proc_corr, sample.nobs = nrow(d1_proc), fixed.x = FALSE)
+
+# Plot SEM network without exogenous covariances, minimum coef values of 0.1 and no residuals.
+semPaths(fit, what="est", whatLabels = "par", style = "OpenMx", layout = "tree2",
+         residuals = FALSE, nCharNodes=0, edge.label.cex = 1.5, asize = 6,
+         sizeMan = 12,sizeMan2 = 5,minimum = 0.1,curvature = 1.5,
+         rotation=1,curve=2, exoCov=FALSE)
+```
+
+
+

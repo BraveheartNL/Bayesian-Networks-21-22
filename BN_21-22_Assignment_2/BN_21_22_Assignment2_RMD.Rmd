@@ -1,0 +1,282 @@
+---
+title: "Bayesian Networks and Causal Inference Assignment 2 Code Noteboo"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+```{r,echo=FALSE,results='hide',message=FALSE, warning=FALSE, include=FALSE}
+# Set CRAN repo
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(version = "3.14")
+BiocManager::install(c("graph","RBGL"))
+
+r = getOption("repos")
+r["CRAN"] = "http://cran.us.r-project.org"
+options(repos = r)
+
+if(!require(c("remotes","pROC","naivebayes","ranger","funModeling","tidyverse","Hmisc", "bnlearn", "naivebayes", "dagitty", "dataPreparation", "lavaan", "summarytools", "OneR","corrplot","semPlot", "knitr","readxl","dplyr","kableExtra","pcalg"))) install.packages(c("remotes","pROC","naivebayes","ranger","funModeling","tidyverse","Hmisc", "bnlearn", "naivebayes", "dagitty", "dataPreparation", "lavaan", "summarytools", "OneR","corrplot","semPlot","knitr","readxl","dplyr","kableExtra","pcalg"), dependencies = TRUE)
+
+if(!require(bayesianNetworks)) remotes::install_github("jtextor/bayesianNetworks")
+
+
+
+
+```
+
+\small
+### Import packages
+```{r, results='hide',message=FALSE}
+library(dagitty)
+library(bnlearn)
+library(pcalg)
+library(semPlot)
+library(bayesianNetworks)
+library(funModeling) 
+library(tidyverse) 
+library(Hmisc)
+library(naivebayes)
+library(dataPreparation)
+library(lavaan)
+library(summarytools)
+library(OneR)
+library(corrplot)
+library(readxl)
+library(dplyr)
+library(kableExtra)
+```
+
+
+## Import dataset
+
+Assuming the "heart_failure_clinical_records_dataset.csv"-file from [this](https://www.kaggle.com/andrewmvd/heart-failure-clinical-data/download) Kaggle page is present in the current working directory.
+
+
+```{r }
+d1=read.table("./heart_failure_clinical_records_dataset.csv", sep=',', header=TRUE)
+```
+
+## Preprocessing 
+
+Shorten some long variable names.
+```{r }
+d1 <- rename(d1, cpk = creatinine_phosphokinase)
+d1 <- rename(d1, srm_creatinine = serum_creatinine)
+d1 <- rename(d1, srm_sodium = serum_sodium)
+```
+
+Create extra dataset to perform processing on.
+```{r }
+d1_proc = data.frame(d1)
+```
+
+#### Continuous and binary data
+
+Order binary variables
+
+```{r}
+
+d1_proc$anaemia <- as.factor(ordered(d1$anaemia))
+d1_proc$sex <- as.factor(ordered(d1$sex))
+d1_proc$high_blood_pressure <- as.factor(ordered(d1$high_blood_pressure))
+d1_proc$diabetes <- as.factor(ordered(d1$diabetes))
+d1_proc$smoking <- as.factor(ordered(d1$smoking))
+d1_proc$DEATH_EVENT <- as.factor(ordered(d1$DEATH_EVENT))
+
+```
+
+#### Bin all continuous
+
+Bin continuous variables using the histograms of the data to create regularly spaces bins
+
+\scriptsize 
+
+```{r}
+temp_age <- rep("<97", nrow(d1_proc)) #96 is max age
+temp_age[d1_proc$age >=0 & d1_proc$age <50] <- "<50"
+temp_age[d1_proc$age >=50 & d1_proc$age <60] <- "50-60"
+temp_age[d1_proc$age >=60 & d1_proc$age <70] <- "60-70"
+temp_age[d1_proc$age >=70 & d1_proc$age <80] <- "70-80"
+temp_age[d1_proc$age >=80 & d1_proc$age<90] <- "80-90"
+temp_age[d1_proc$age >=90] <- "90>"
+#turn binned data into factor:
+d1_proc$age <- as.factor(ordered(temp_age, levels=c("<50","50-60","60-70","70-80","80-90",
+                                          "90>")))
+
+temp_cpk <- rep("<7862", nrow(d1_proc)) #96 is max cpk
+temp_cpk[d1_proc$cpk >=0 & d1_proc$cpk <200] <- "0-200"
+temp_cpk[d1_proc$cpk >=200 & d1_proc$cpk <400] <- "200-400"
+temp_cpk[d1_proc$cpk >=400 & d1_proc$cpk <600] <- "400-600"
+temp_cpk[d1_proc$cpk >=600 & d1_proc$cpk <800] <- "600-800"
+temp_cpk[d1_proc$cpk >=800 & d1_proc$cpk <1000] <- "800-1000"
+temp_cpk[d1_proc$cpk >=1000 & d1_proc$cpk <1200] <- "1000-1200"
+temp_cpk[d1_proc$cpk >=1200 & d1_proc$cpk <1400] <- "1200-1400"
+temp_cpk[d1_proc$cpk >=1400 & d1_proc$cpk <1600] <- "1400-1600"
+temp_cpk[d1_proc$cpk >=1600 & d1_proc$cpk <1800] <- "1600-1800"
+temp_cpk[d1_proc$cpk >=1800 & d1_proc$cpk <2000] <- "1800-2000"
+temp_cpk[d1_proc$cpk >=2000] <- "2000>"
+#turn binned data into factor:
+d1_proc$cpk <- as.factor(ordered(temp_cpk, levels=c("0-200", "200-400", "400-600",
+                                          "600-800","800-1000","1000-1200",
+                                          "1200-1400","1400-1600",
+                                          "1600-1800","1800-2000",
+                                          "2000>")))
+
+temp_ef <- rep("<81", nrow(d1_proc)) #80 is max ef
+temp_ef[d1_proc$ejection_fraction >=0  & d1_proc$ejection_fraction <20] <- "<20"
+temp_ef[d1_proc$ejection_fraction >=20 & d1_proc$ejection_fraction <30] <- "20-30"
+temp_ef[d1_proc$ejection_fraction >=30 & d1_proc$ejection_fraction <40] <- "30-40"
+temp_ef[d1_proc$ejection_fraction >=40 & d1_proc$ejection_fraction <50] <- "40-50"
+temp_ef[d1_proc$ejection_fraction >=50 & d1_proc$ejection_fraction <60] <- "50-60"
+temp_ef[d1_proc$ejection_fraction >=60] <- "60>"
+#turn binned data into factor:
+d1_proc$ejection_fraction <- as.factor(ordered(temp_ef, levels=c("<20","20-30","30-40",
+                                                       "40-50","50-60","60>")))
+
+temp_plt <- rep("<850k", nrow(d1_proc)) #850k is max platelets
+temp_plt[d1_proc$platelets >=0  & d1_proc$platelets <50000] <- "<50k"
+temp_plt[d1_proc$platelets >=50000  & d1_proc$platelets <100000] <- "50k-100k"
+temp_plt[d1_proc$platelets >=100000  & d1_proc$platelets <150000] <- "100k-150k"
+temp_plt[d1_proc$platelets >=150000  & d1_proc$platelets <200000] <- "150k-200k"
+temp_plt[d1_proc$platelets >=200000  & d1_proc$platelets <250000] <- "200k-250k"
+temp_plt[d1_proc$platelets >=250000  & d1_proc$platelets <300000] <- "250k-300k"
+temp_plt[d1_proc$platelets >=300000  & d1_proc$platelets <350000] <- "300k-350k"
+temp_plt[d1_proc$platelets >=350000  & d1_proc$platelets <400000] <- "350k-400k"
+temp_plt[d1_proc$platelets >=400000  & d1_proc$platelets <450000] <- "400k-450k"
+temp_plt[d1_proc$platelets >=450000  & d1_proc$platelets <500000] <- "450k-500k"
+temp_plt[d1_proc$platelets >=500000] <- "500k>"
+#turn binned data into factor
+d1_proc$platelets <- as.factor(ordered(temp_plt, levels=c("<50k","50k-100k","100k-150k",
+                                                "150k-200k","200k-250k","250k-300k",
+                                                "300k-350k","350k-400k",
+                                                "400k-450k","450k-500k","500k>")))
+
+temp_sc <- rep("<9.5", nrow(d1_proc)) #850k is max platelets
+temp_sc[d1_proc$srm_creatinine >=0  & d1_proc$srm_creatinine <1.0] <- "<1.0"
+temp_sc[d1_proc$srm_creatinine >=1.0  & d1_proc$srm_creatinine <1.5] <- "1.0-1.5"
+temp_sc[d1_proc$srm_creatinine >=1.5  & d1_proc$srm_creatinine <2.0] <- "1.5-2.0"
+temp_sc[d1_proc$srm_creatinine >=2.0  & d1_proc$srm_creatinine <2.5] <- "2.0-2.5"
+temp_sc[d1_proc$srm_creatinine >=2.5  & d1_proc$srm_creatinine <3.0] <- "2.5-3.0"
+temp_sc[d1_proc$srm_creatinine >=3.0  & d1_proc$srm_creatinine <3.5] <- "3.0-3.5"
+temp_sc[d1_proc$srm_creatinine >=3.5  & d1_proc$srm_creatinine <4.0] <- "3.5-4.0"
+temp_sc[d1_proc$srm_creatinine >=4.0] <- "4.0>"
+d1_proc$srm_creatinine <- as.factor(ordered(temp_sc, levels=c("<1.0","1.0-1.5","1.5-2.0",
+                                                    "2.0-2.5","2.5-3.0","3.0-3.5","3.5-4.0","4.0>")))
+
+temp_ss <- rep("<149", nrow(d1_proc)) #148 is max serum_sodium
+temp_ss[d1_proc$srm_sodium >=0  & d1_proc$srm_sodium <125] <- "<125"
+temp_ss[d1_proc$srm_sodium >=125  & d1_proc$srm_sodium <130] <- "125-130"
+temp_ss[d1_proc$srm_sodium >=130  & d1_proc$srm_sodium <135] <- "130-135"
+temp_ss[d1_proc$srm_sodium >=135  & d1_proc$srm_sodium <140] <- "135-140"
+temp_ss[d1_proc$srm_sodium >=140  & d1_proc$srm_sodium <145] <- "140-145"
+temp_ss[d1_proc$srm_sodium >=145] <- "145>"
+d1_proc$srm_sodium <- as.factor(ordered(temp_ss, levels=c("<125","125-130", "130-135", 
+                                                "135-140","140-145","145>")))
+
+temp_time <- rep("<286", nrow(d1_proc)) #285 is max time
+temp_time[d1_proc$time >=0  & d1_proc$time <30] <- "<30"
+temp_time[d1_proc$time >=30  & d1_proc$time <60] <- "30-60"
+temp_time[d1_proc$time >=60  & d1_proc$time <90] <- "60-90"
+temp_time[d1_proc$time >=90  & d1_proc$time <120] <- "90-120"
+temp_time[d1_proc$time >=120  & d1_proc$time <150] <- "120-150"
+temp_time[d1_proc$time >=150  & d1_proc$time <180] <- "150-180"
+temp_time[d1_proc$time >=180  & d1_proc$time <210] <- "180-210"
+temp_time[d1_proc$time >=210  & d1_proc$time <240] <- "210-240"
+temp_time[d1_proc$time >=240  & d1_proc$time <270] <- "240-270"
+temp_time[d1_proc$time >=270] <- "270>"
+d1_proc$time <- as.factor(ordered(temp_time,  levels=c("<30","30-60","60-90","90-120",
+                                             "120-150","150-180","180-210",
+                                             "210-240","240-270","270>")))
+
+
+```
+
+\normalsize
+\newpage
+
+
+
+
+### Practical Constraint Stable structure learning algorithm
+Colombo, D., & Maathuis, M. H. (2014). Order-independent constraint-based causal structure learning. J. Mach. Learn. Res., 15(1), 3741-3782.
+
+-Order dependendent
+-Variabale results in high dimension settings due to ordered
+->Fixed in this implementation
+
+For each pair of variables, assumes connection, tries to find conditioning set that can seperate them. (satisify as much independence of a model)
+
+Interesting parameters:
+alpha: target nominal type I error rate
+B: Number of permutations considered for each permutation test
+max.sx: maximum allowed size of the conditioning sets using in conditional independence tests
+
+
+```{r }
+fit1 <- pc.stable(d1_proc, max.sx = 1, alpha = 0.01)
+
+#fit1 <- pc.stable(d1_proc)
+graphviz.plot(fit1, shape = "rectangle")
+
+
+
+```
+
+
+
+### Hill climbing structure learning algorithm
+A greedy hill climbing search that explores the space by single arc-addiction, removel and reversal. Random starts avoid local optima.
+
+interesting parameters:
+
+Max.iter: max number of iterations
+max.p: max parents of node
+perturb: number of attempts to randomly insert/remove/reverse an arc- on every random restart
+restart: Number of restarts, default is zero
+
+
+```{r }
+fit2 <- hc(d1_proc, score = "aic")
+
+#fit2 <- hc(d1_proc)
+graphviz.plot(fit2, shape = "rectangle")
+
+fit2
+```
+
+
+```{r}
+
+arcs(fit1)
+arcs(fit2)
+
+compare(fit1,fit2)
+
+
+hamming(fit1,fit2)
+shd(fit1,fit2)
+
+shd.val <- pcalg::shd(fit1,fit2)
+
+pcalg::shd(fit1, fit2, wlbl = FALSE, debug = FALSE)
+
+differences <- xor(amat(fit1), amat(fit2))
+differences
+sum(differences)
+
+
+
+
+
+par(mfrow = c(5, 3))
+graphviz.compare(fit1, fit2, shape = "rectangle")
+```
+
+
+
